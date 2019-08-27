@@ -23,7 +23,7 @@ try:
     import indigo
 except:
     pass
-
+kBroadcasterPluginId = "com.GlennNZ.indigoplugin.BlueIris"
 # Establish default plugin prefs; create them if they don't already exist.
 kDefaultPluginPrefs = {
     u'configMenuPollInterval': "300",  # Frequency of refreshes.
@@ -179,6 +179,11 @@ class Plugin(indigo.PluginBase):
 
         self.debugLog(u"Starting Plugin. startup() method called.")
 
+        indigo.server.subscribeToBroadcast(kBroadcasterPluginId, u"broadcasterStarted", u"broadcasterStarted")
+        indigo.server.subscribeToBroadcast(kBroadcasterPluginId, u"broadcasterShutdown", u"broadcasterShutdown")
+        indigo.server.subscribeToBroadcast(kBroadcasterPluginId, u"motionTrue", u"motionTrue")
+
+
 
     def validatePrefsConfigUi(self, valuesDict):
 
@@ -262,7 +267,6 @@ class Plugin(indigo.PluginBase):
     def toggleDebugEnabled(self):
         """ Toggle debug on/off. """
 
-
         self.logger.debug(u"toggleDebugEnabled() method called.")
 
         if self.debugLevel == int(logging.INFO):
@@ -301,3 +305,16 @@ class Plugin(indigo.PluginBase):
         self.logLevel = int(logging.DEBUG)
         self.logger.debug(u"New logLevel = " + str(self.logLevel))
         self.indigo_log_handler.setLevel(self.logLevel)
+
+############ Broadcast Subscribe stuff
+
+    def broadcasterStarted(self):
+        self.logger.debug("received broadcasterStarted message")
+        return
+
+    def broadcasterShutdown(self):
+        self.logger.debug("received broadcasterShutdown message")
+        return
+
+    def motionTrue(self, arg):
+        self.logger.debug("received Camera motionTrue message: %s" % (arg) )
