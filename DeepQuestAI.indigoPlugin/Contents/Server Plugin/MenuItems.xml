@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<MenuItems>
+  <MenuItem id="refreshData">
+    <Name>Refresh Data Now...</Name>
+    <CallbackMethod>refreshData</CallbackMethod>
+  </MenuItem>
+  <MenuItem id="updatePlugin">
+    <Name>Update Plugin</Name>
+    <CallbackMethod>updatePlugin</CallbackMethod>
+  </MenuItem>
+  <MenuItem id="toggleDebug">
+    <Name>Toggle Debugging</Name>
+    <CallbackMethod>toggleDebugEnabled</CallbackMethod>
+  </MenuItem>
+      <MenuItem id="toggleDebugMax">
+        <Name>Set Debug to Max</Name>
+        <CallbackMethod>toggleDebugMax</CallbackMethod>
+    </MenuItem>
+</MenuItems>
