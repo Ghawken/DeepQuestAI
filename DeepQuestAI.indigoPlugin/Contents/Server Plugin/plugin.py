@@ -152,7 +152,7 @@ hair dryer, toothbrush'''
             self.useLocal = valuesDict.get('useLocal', False)
             self.ipaddress = valuesDict.get('ipaddress', False)
             self.logLevel = int(valuesDict.get("showDebugLevel",'5'))
-            self.deviceCamerastouse = valuesDict.get('deviceCameras','')
+            self.deviceCamerastouse = valuesDict.get('deviceCamera','')
 
             self.indigo_log_handler.setLevel(self.logLevel)
             self.logger.debug(u"logLevel = " + str(self.logLevel))
@@ -413,7 +413,7 @@ hair dryer, toothbrush'''
 
         if str(indigodeviceid) not in self.deviceCamerastouse:
             self.logger.debug('Camera not enabled within DeepState Config Settings/Ignored.')
-            self.logger.debug(unicode(self.deviceCamerastouse))
+            #self.logger.debug(unicode(self.deviceCamerastouse))
             return
 
 
