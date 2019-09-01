@@ -411,7 +411,7 @@ hair dryer, toothbrush'''
         newimagedownloaded = arg[4]
         indigodeviceid = arg[5]
 
-        if indigodeviceid not in self.deviceCamerastouse:
+        if str(indigodeviceid) not in self.deviceCamerastouse:
             self.logger.debug('Camera not enabled within DeepState Config Settings/Ignored.')
             return
 
@@ -484,6 +484,7 @@ hair dryer, toothbrush'''
                         image.save(self.folderLocationFaces+"DeepStateFacesFull_{}_{}.jpg".format(cameraname, str(t.time())))
                     if carfound:
                         self.checkcars(liveurlphoto, ipaddress,cameraname, imagefresh, x_min,x_max,y_min,y_max)
+                        image.save(self.folderLocationCars + "DeepStateCarsFull_{}_{}.jpg".format(cameraname, str(t.time())))
                         carfound = False
 
                 if anyobjectfound:
