@@ -39,6 +39,16 @@
 				<Label>Apple Account ID:</Label>
 			</Field>
 
+
+            <Field id="deviceCamera" type="list" rows="14">
+                <Label>Enabled Camera(s)</Label>
+                <List class="indigo.devices" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"/>
+            </Field>
+
+
+
+
+
     <Field id="space10" type="label" alignText="right">
         <Label>Debugging Options:</Label>
     </Field>

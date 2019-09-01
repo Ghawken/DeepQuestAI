@@ -98,6 +98,7 @@ hair dryer, toothbrush'''
         self.useLocal = self.pluginPrefs.get('useLocal', False)
         self.ipaddress = self.pluginPrefs.get('ipaddress', False)
 
+        self.deviceCamerastouse = self.pluginPrefs.get('deviceCamera','')
 
         self.debug1 = self.pluginPrefs.get('debug1', False)
         self.debug2 = self.pluginPrefs.get('debug2', False)
@@ -151,14 +152,14 @@ hair dryer, toothbrush'''
             self.useLocal = valuesDict.get('useLocal', False)
             self.ipaddress = valuesDict.get('ipaddress', False)
             self.logLevel = int(valuesDict.get("showDebugLevel",'5'))
-
+            self.deviceCamerastouse = valuesDict.get('deviceCameras','')
 
             self.indigo_log_handler.setLevel(self.logLevel)
             self.logger.debug(u"logLevel = " + str(self.logLevel))
             self.logger.debug(u"User prefs saved.")
             self.logger.debug(u"Debugging on (Level: {0})".format(self.debugLevel))
 
-
+        self.logger.debug(unicode(valuesDict))
         return True
 
     # Start 'em up.
@@ -401,11 +402,19 @@ hair dryer, toothbrush'''
 
     def motionTrue(self, arg):
         self.logger.debug("received Camera motionTrue message: %s" % (arg) )
+
+
         urlphoto = arg[0]
         cameraname = arg[1]
         pathimage = arg[2]
         updatetime = arg[3]
         newimagedownloaded = arg[4]
+        indigodeviceid = arg[5]
+
+        if indigodeviceid not in self.deviceCamerastouse:
+            self.logger.debug('Camera not enabled within DeepState Config Settings/Ignored.')
+            return
+
 
         basepath = os.path.dirname(pathimage)
 
@@ -478,7 +487,7 @@ hair dryer, toothbrush'''
                         carfound = False
 
                 if anyobjectfound:
-                    image.save(self.folderLocation+"/DeepState_{}_{}.jpg".format(cameraname, label))
+                    #image.save(self.folderLocation+"/DeepState_{}_{}.jpg".format(cameraname, label))
                     anyobjectfound = False
 
             else:
