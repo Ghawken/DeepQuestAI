@@ -413,6 +413,7 @@ hair dryer, toothbrush'''
 
         if str(indigodeviceid) not in self.deviceCamerastouse:
             self.logger.debug('Camera not enabled within DeepState Config Settings/Ignored.')
+            self.logger.debug(unicode(self.deviceCamerastouse))
             return
 
 
