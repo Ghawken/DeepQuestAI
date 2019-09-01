@@ -4,10 +4,6 @@
     <Name>Refresh Data Now...</Name>
     <CallbackMethod>refreshData</CallbackMethod>
   </MenuItem>
-  <MenuItem id="updatePlugin">
-    <Name>Update Plugin</Name>
-    <CallbackMethod>updatePlugin</CallbackMethod>
-  </MenuItem>
   <MenuItem id="toggleDebug">
     <Name>Toggle Debugging</Name>
     <CallbackMethod>toggleDebugEnabled</CallbackMethod>
