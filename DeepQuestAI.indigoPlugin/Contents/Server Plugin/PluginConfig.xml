@@ -30,7 +30,14 @@
 
 				<Label>Enter your Ip Address of Service:</Label>
 			</Field>
+            <Field id="port"
+				   type="textfield"
+				   tooltip="Enter Port of DeepState Service"
+				   default="7188"
+                   >
 
+				<Label>Enter your Port:</Label>
+			</Field>
             <Field id="appleAPIid"
 				   type="textfield"
 				   tooltip="Is this account active?"
@@ -46,8 +53,20 @@
             </Field>
 
 
+		    <Field id="superCharge" type="checkbox" tooltip="Check to superCharge detection, multiple images seconds apart">
+        <Label>SuperCharge Detection </Label>
+        <Description>Enable/Disable</Description>
+             </Field>
 
+		    <Field id="superChargeimageno" type="textfield" tooltip="Number of Images to superCharge detection, multiple images seconds apart">
+        <Label>SuperCharge Images Number: </Label>
+        <Description>Number of Images:</Description>
+             </Field>
 
+        <Field id="superChargedelay" type="textfield" tooltip="Delay in seconds to superCharge detection, multiple images seconds apart">
+        <Label>SuperCharge Detection Seconds Apart (secs) </Label>
+        <Description>seconds</Description>
+             </Field>
 
     <Field id="space10" type="label" alignText="right">
         <Label>Debugging Options:</Label>
@@ -76,6 +95,11 @@
         <Label/>
         <Description>Debug 4</Description>
     </Field>
+        <Field id="debug5" type="checkbox" tooltip="Enabling will result Debugging Triggers.">
+        <Label/>
+        <Description>Debug 5:Triggers</Description>
+    </Field>
+
     <Field id="showDebugLevel" type="menu" defaultValue="20" tooltip="Controls the amount of debug information written to the log.">
         <Label>Debug level:</Label>
         <Description>Level of Debug information to show in Indigo</Description>

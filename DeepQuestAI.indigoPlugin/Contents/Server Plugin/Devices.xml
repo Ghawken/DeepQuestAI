@@ -1,5 +1,60 @@
 <?xml version="1.0"?>
 <Devices>
+ <Device type="custom" id="DeepStateObject" >
+        <Name>DeepState Object</Name>
+    <ConfigUI>
+        <Field id="objectType" type="menu">
+            <Label>Object Type :</Label>
+            <List>
+            <Option value="car">Vehicles</Option>
+            <Option value="person">Person</Option>
+        </List>
+        </Field>
+        <Field id="confidence"
+				   type="textfield"
+				   tooltip="Enter lowest confidence to be trigger, from 0 to 1"
+				   default="0.6"
+                  >
+
+				<Label>Confidence level above which to be used 0-1 eg. 0.6:</Label>
+			</Field>
+        <Field id="sep3" type="separator"/>
+    </ConfigUI>
+         <States>
+             <State id="objectType">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Object Type</TriggerLabel>
+                <ControlPageLabel>Object Type</ControlPageLabel>
+            </State>
+          <State id="timeLastFound">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Time last Found</TriggerLabel>
+                <ControlPageLabel>Time last Found</ControlPageLabel>
+            </State>
+             <State id="cameraFound">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Camera Last Found</TriggerLabel>
+                <ControlPageLabel>Camera Last Found</ControlPageLabel>
+            </State>
+          <State id="imageLink">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Path to Image</TriggerLabel>
+                <ControlPageLabel>Path to Image</ControlPageLabel>
+            </State>
+                       <State id="confidence">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Confidence value of finding</TriggerLabel>
+                <ControlPageLabel>Confidence value</ControlPageLabel>
+            </State>
+                       <State id="date">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Date last time Found</TriggerLabel>
+                <ControlPageLabel>Date last time Found</ControlPageLabel>
+            </State>
+         </States>
+        <UiDisplayStateId>objectType</UiDisplayStateId>
+
+  </Device>
 
 
 </Devices>

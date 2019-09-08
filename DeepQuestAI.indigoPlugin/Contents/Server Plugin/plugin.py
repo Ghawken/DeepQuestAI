@@ -23,6 +23,9 @@ import requests
 from PIL import Image,ImageDraw,ImageFont
 
 import StringIO
+from Queue import *
+import threading
+import uuid
 
 try:
     import indigo
@@ -40,6 +43,12 @@ kDefaultPluginPrefs = {
     u'updaterEmail': "",  # Email to notify of plugin updates.
     u'updaterEmailsEnabled': False  # Notification of plugin updates wanted.
 }
+
+class deepstateitem:
+    def __init__(self, path, indigodeviceid, cameraname):
+        self.path = path
+        self.indigodeviceid = indigodeviceid
+        self.cameraname = cameraname
 
 
 class Plugin(indigo.PluginBase):
@@ -90,28 +99,42 @@ hair dryer, toothbrush'''
 
         ## Create new Log File
 
-        self.listCameras = {}  # use a dictionary of CameraNames False/True as to request already sent
+        #self.listCameras = {}  # use a dictionary of CameraNames False/True as to request already sent
 
         self.reply = False
         self.triggers = {}
+
+        self.triggersTriggered = {}
+
         self.API = self.pluginPrefs.get('API', False)
         self.useLocal = self.pluginPrefs.get('useLocal', False)
         self.ipaddress = self.pluginPrefs.get('ipaddress', False)
+        self.superCharge = self.pluginPrefs.get('superCharge', False)
+        self.superChargedelay = self.pluginPrefs.get('superChargedelay', 2)
+        self.superChargeimageno = self.pluginPrefs.get('superChargeimageno', 5)  ## actually means number of images
 
+        self.port = self.pluginPrefs.get('port', '7188')
         self.deviceCamerastouse = self.pluginPrefs.get('deviceCamera','')
 
+        self.imageTimeout = 10
+        self.serverTimeout = 5
         self.debug1 = self.pluginPrefs.get('debug1', False)
         self.debug2 = self.pluginPrefs.get('debug2', False)
         self.debug3 = self.pluginPrefs.get('debug3', False)
         self.debug4 = self.pluginPrefs.get('debug4',False)
+        self.debug5 = self.pluginPrefs.get('debug5', False)
+
 
         self.next_update_check = t.time()
         MAChome = os.path.expanduser("~") + "/"
         self.folderLocation = MAChome + "Documents/Indigo-DeepQuestAI/"
         self.folderLocationFaces = MAChome + "Documents/Indigo-DeepQuestAI/Faces/"
         self.folderLocationCars = MAChome + "Documents/Indigo-DeepQuestAI/Cars/"
+        self.folderLocationTemp = MAChome + "Documents/Indigo-DeepQuestAI/Temp/"
 
         self.deviceNeedsUpdated = ''
+
+        self.que = Queue()
 
         if MajorProblem > 0:
             plugin = indigo.server.getPlugin('com.GlennNZ.indigoplugin.DeepQuestAI')
@@ -151,8 +174,18 @@ hair dryer, toothbrush'''
             #self.logger.error(unicode(valuesDict))
             self.useLocal = valuesDict.get('useLocal', False)
             self.ipaddress = valuesDict.get('ipaddress', False)
+            self.superCharge = valuesDict.get('superCharge', False)
+            self.superChargeimageno = valuesDict.get('superChargeimageno', 3)
+            self.superChargedelay = valuesDict.get('superChargedelay', 3)
+            self.port = valuesDict.get('port', '7188')
             self.logLevel = int(valuesDict.get("showDebugLevel",'5'))
             self.deviceCamerastouse = valuesDict.get('deviceCamera','')
+            self.debug1 = valuesDict.get('debug1', False)
+            self.debug2 = valuesDict.get('debug2', False)
+            self.debug3 = valuesDict.get('debug3', False)
+            self.debug4 = valuesDict.get('debug4', False)
+            self.debug5 = valuesDict.get('debug5', False)
+
 
             self.indigo_log_handler.setLevel(self.logLevel)
             self.logger.debug(u"logLevel = " + str(self.logLevel))
@@ -167,12 +200,13 @@ hair dryer, toothbrush'''
 
          self.debugLog(u"deviceStartComm() method called.")
 
+         dev.stateListOrDisplayStateIdChanged()
 
     # Shut 'em down.
     def deviceStopComm(self, dev):
 
         self.debugLog(u"deviceStopComm() method called.")
-        indigo.server.log(u"Stopping Enphase device: " + dev.name)
+        indigo.server.log(u"Stopping device: " + dev.name)
 
     def forceUpdate(self):
         self.updater.update(currentVersion='0.0.0')
@@ -218,9 +252,18 @@ hair dryer, toothbrush'''
             os.makedirs(self.folderLocationFaces)
         if not os.path.exists(self.folderLocationCars):
             os.makedirs(self.folderLocationCars)
+        if not os.path.exists(self.folderLocationTemp):
+            os.makedirs(self.folderLocationTemp)
+
+        self.deleteTempfiles()
+
         indigo.server.subscribeToBroadcast(kBroadcasterPluginId, u"broadcasterStarted", u"broadcasterStarted")
         indigo.server.subscribeToBroadcast(kBroadcasterPluginId, u"broadcasterShutdown", u"broadcasterShutdown")
         indigo.server.subscribeToBroadcast(kBroadcasterPluginId, u"motionTrue", u"motionTrue")
+
+        self.logger.debug(u'Starting DeepState send Thread:')
+        ImageThread = threading.Thread(target=self.threadSendtodeepstate )
+        ImageThread.start()
 
 
 
@@ -302,6 +345,16 @@ hair dryer, toothbrush'''
         self.refreshDataForDev(dev)
         return True
 
+    def deleteTempfiles(self):
+        self.logger.debug(u'Deleting temp files if any.')
+        for the_file in os.listdir(self.folderLocationTemp):
+            file_path = os.path.join(self.folderLocationTemp, the_file)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+                # elif os.path.isdir(file_path): shutil.rmtree(file_path)
+            except Exception as e:
+                self.logger.exception(e)
 
     def toggleDebugEnabled(self):
         """ Toggle debug on/off. """
@@ -355,28 +408,53 @@ hair dryer, toothbrush'''
         self.logger.debug("received broadcasterShutdown message")
         return
 
-    def checkcars(self, liveurlphoto, ipaddress, cameraname, image, x_min,x_max,y_min,y_max):
+    def checkcars(self, liveurlphoto, ipaddress, cameraname, image, indigodeviceid, confidence, x_min,x_max,y_min,y_max):
         self.logger.debug('Now checking for Cars....')
         urltosend = 'http://' + ipaddress + ":7188/v1/vision/face"
         try:
             cropped = image.crop((x_min, y_min, x_max, y_max))
-            cropped.save(self.folderLocationCars + "DeepStateCars_{}_{}.jpg".format(cameraname, str(t.time())))
+            filename = self.folderLocationCars + "DeepStateCars_{}_{}.jpg".format(cameraname, str(t.time()))
+            cropped.save(filename)
 
+            self.checkDevices(cropped, 'car', ipaddress, cameraname, image, filename, confidence)
+            self.triggerCheck('car', cameraname, indigodeviceid, 'objectTrigger', confidence)
         except Exception as ex:
             self.logger.debug('Error Saving to Vehicles: ' + unicode(ex))
 
-    def checkfaces2(self, liveurlphoto, ipaddress, cameraname, image, x_min,x_max,y_min,y_max):
+    def checkfaces2(self, liveurlphoto, ipaddress, cameraname, image, indigodeviceid, confidence, x_min,x_max,y_min,y_max):
         self.logger.debug('Now checking for Faces 2/Cropping only....')
         urltosend = 'http://' + ipaddress + ":7188/v1/vision/face"
         try:
             cropped = image.crop((x_min, y_min, x_max, y_max))
-            cropped.save(self.folderLocationFaces + "DeepStateFaces_{}_{}.jpg".format(cameraname, str(t.time())))
+            filename= self.folderLocationFaces + "DeepStateFaces_{}_{}.jpg".format(cameraname, str(t.time()))
+            cropped.save(filename)
+
+            self.checkDevices(cropped, 'person', ipaddress, cameraname, image, filename, confidence)
+            self.triggerCheck('person', cameraname, indigodeviceid, 'objectTrigger', confidence)
 
         except Exception as ex:
             self.logger.debug('Error Saving to Vehicles: ' + unicode(ex))
 
+    def checkDevices(self, cropped, objectname, ipaddress, cameraname, image, filename, confidence):
+        self.logger.debug('CheckDevices run')
+
+        for dev in indigo.devices.itervalues("self.DeepStateObject"):
+            if dev.enabled:
+                objectName = dev.pluginProps['objectType']
+                self.logger.debug('ObjectType:'+unicode(objectName))
+                if objectName == objectname:
+                    dev.updateStateOnServer('objectType', value=objectname)
+                    dev.updateStateOnServer('cameraFound', value=cameraname)
+                    dev.updateStateOnServer('imageLink', value=filename)
+                    time = t.time()
+                    update_time = t.strftime('%c')
+                    dev.updateStateOnServer('timeLastFound', value=time)
+                    dev.updateStateOnServer('confidence', value=confidence)
+                    dev.updateStateOnServer('date', value=update_time)
+
     def checkfaces(self, cropped, ipaddress, cameraname, image):
         self.logger.error('Now checking for Faces....')
+
         urltosend = 'http://' + ipaddress + ":7188/v1/vision/face"
         try:
 
@@ -386,115 +464,267 @@ hair dryer, toothbrush'''
 
             response = requests.post(urltosend, files={"image": image_file}, timeout=30).json()
             self.logger.error(unicode(response))
-            self.listCameras[cameraname] = False  # set to false as already run.
+            #self.listCameras[cameraname] = False  # set to false as already run.
 
             if response['success'] == True:
                 for object in response["predictions"]:
-                    cropped.save(self.folderLocationFaces + "DeepStateFaces_{}_{}.jpg".format(cameraname, str(t.time()) ) )
+                    filename = self.folderLocationFaces + "DeepStateFaces_{}_{}.jpg".format(cameraname, str(t.time() )  )
+                    cropped.save(filename)
 
             else:
                 self.logger.debug('DeepState Faces Request failed:')
+
+            # update devices
+            self.checkDevices(cropped, 'person',ipaddress, cameraname, image, filename)
+            self.triggerCheck('person', cameraname, 'objectTrigger')
 
         except Exception as ex:
             self.logger.debug('Error sending to Deepstate: ' + unicode(ex))
             self.reply = False
 
+    ##################  Triggers
 
-    def motionTrue(self, arg):
-        self.logger.debug("received Camera motionTrue message: %s" % (arg) )
+    def triggerStartProcessing(self, trigger):
+        self.logger.debug("Adding Trigger %s (%d) - %s" % (trigger.name, trigger.id, trigger.pluginTypeId))
+        assert trigger.id not in self.triggers
+        self.triggers[trigger.id] = trigger
+
+    def triggerStopProcessing(self, trigger):
+        self.logger.debug("Removing Trigger %s (%d)" % (trigger.name, trigger.id))
+        assert trigger.id in self.triggers
+        del self.triggers[trigger.id]
 
 
-        urlphoto = arg[0]
-        cameraname = arg[1]
-        pathimage = arg[2]
-        updatetime = arg[3]
-        newimagedownloaded = arg[4]
-        indigodeviceid = arg[5]
+    def triggerCheck(self, objectname, cameraname, indigodeviceid, event, confidence):
 
-        if str(indigodeviceid) not in self.deviceCamerastouse:
-            self.logger.debug('Camera not enabled within DeepState Config Settings/Ignored.')
-            #self.logger.debug(unicode(self.deviceCamerastouse))
+        if self.debug2:
+            self.logger.debug('triggerCheck run. Object:'+unicode(objectname)+' Camera:' + unicode(cameraname) + ' Event:' + unicode(event))
+        try:
+            if self.pluginIsInitializing:
+                self.logger.info(u'Trigger: Ignore as Plugin Just started.')
+                return
+
+            for triggerId, trigger in sorted(self.triggers.iteritems()):
+                if self.debug5:
+                    self.logger.debug("Checking Trigger %s (%s), Type: %s, CameraName: %s, Event: %s, Confidence:%s" % (
+                    trigger.name, trigger.id, trigger.pluginTypeId, cameraname, event, confidence))
+
+                # Change to List for all Cameras
+                if (trigger.pluginTypeId == 'objectFound'):
+                    if str(trigger.pluginProps['objectType'])== str(objectname):
+                        triggerconfidence = trigger.pluginProps.get('confidence',0.6)
+
+                        if str(indigodeviceid) in trigger.pluginProps['deviceCamera'] and float(confidence) >= float(triggerconfidence):
+                            # check if cameraname within list - although might be device ID
+                            if self.debug5:
+                                self.logger.debug("===== Executing objectFound Trigger %s (%d) and confidence is %s" % (
+                                    trigger.name, trigger.id, confidence))
+                                #if self.debug4:
+                                    #self.logger.debug(u'deviceCamera' + unicode(trigger.pluginProps['deviceCamera']))
+                                    #self.logger.debug(u'indigodeviceid:' + unicode(indigodeviceid))
+                            if trigger.id not in self.triggersTriggered:
+                                # no previous triggers
+                                # add to self.triggersTriggered
+                                self.triggersTriggered[trigger.id] = t.time()  ## add utc timestamp
+                                ## run trigger as no previous times of running
+                                if self.debug5:
+                                    self.logger.debug(u'self.triggersTriggered:'+unicode(self.triggersTriggered))
+                                    self.logger.debug(u'Running Trigger as just added.')
+                                indigo.trigger.execute(trigger)
+                            else:
+                                if self.debug5:
+                                    self.logger.debug(u'Trigger.ID found and self.triggersTriggered:' + unicode(self.triggersTriggered))
+                                if float(t.time()) >=  float(self.triggersTriggered[trigger.id]) +int( trigger.pluginProps.get('dontretrigger',10) ):  ## request already running
+                                    # okay more than 10 seconds ago, re-run trigger and update time
+                                    self.triggersTriggered[trigger.id] = t.time()  ## add utc timestamp
+                                    if self.debug5:
+                                        self.logger.debug(u'self.triggersTriggered:' + unicode(self.triggersTriggered))
+                                    indigo.trigger.execute(trigger)
+                                else:
+                                    if self.debug5:
+                                        self.logger.error(u'Trigger :'+ unicode(trigger.name) + u' not run again, as current time='+unicode(t.time())+u' and time past run='+unicode(self.triggersTriggered[trigger.id]))
+                                    # add requesting running and continue
+
+
+
+                elif self.debug2:
+                    self.logger.debug(
+                        "Not Run Trigger Type %s (%d), %s" % (trigger.name, trigger.id, trigger.pluginTypeId))
+
+        except:
+            self.logger.exception(u'Caught Exception within Trigger Check')
             return
 
-
-        basepath = os.path.dirname(pathimage)
-
-        #self.logger.debug(basepath)
-
-        ## self.listCameras - add request to current list
-        self.logger.debug(unicode(self.listCameras))
-
-        if cameraname not in self.listCameras:
-            # no request running for this camera
-            # add to self.listCameras
-            self.listCameras[cameraname]=True
-        else:
-            if self.listCameras[cameraname]:  ## request already running
-                self.logger.debug('Current request already running for this Camera: Aborted.')
-                return
-            else:
-                self.listCameras[cameraname]=True
-                # add requesting running and continue
-        if self.useLocal:
-            ipaddress = 'localhost'
-        else:
-            ipaddress = self.ipaddress
-
-        urltosend = 'http://'+ipaddress+ ":7188/v1/vision/detection"
-        self.logger.debug(urltosend)
-
+    def threadDownloadImage(self, path, url):
+        if self.debug2:
+            self.logger.debug(u'threadDownloadImages called.'+u' & Number of Active Threads:' + unicode(
+                    threading.activeCount()))
         try:
-            # pull image from url...
-            liveurlphoto = requests.get(urlphoto)
+             # add timer and move to chunk download...
+             start = t.time()
+             r = requests.get(url, stream=True, timeout=self.serverTimeout)
+             if r.status_code == 200:
+                 # self.logger.debug(u'Yah Code 200....')
+                 with open(path, 'wb') as f:
+                    for chunk in r.iter_content(1024):
+                        f.write(chunk)
+                        if t.time()>(start +self.imageTimeout):
+                            self.logger.error(u'Download Image Taking too long.  Aborted.  ?Network issue')
+                            break
+                    if self.debug2:
+                        self.logger.debug(u'Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
+             else:
+                 self.logger.debug(u'Issue Downloading Image. Failed.')
 
-            urlimage = Image.open(StringIO.StringIO(liveurlphoto.content))
-#           image_data = urlimage
-            #image_data = open(pathimage, "rb").read()
-            image = urlimage
-            imagefresh = Image.open(StringIO.StringIO(liveurlphoto.content))
-             #   Image.open(pathimage).convert('RGB')
+        except requests.exceptions.Timeout:
+            self.logger.debug(u'threadDownloadImage has timed out and cannot connect to BI Server.')
+            pass
 
-            self.reply = True
-            response = requests.post(urltosend,files={"image":liveurlphoto.content},timeout=30).json()
-            self.logger.debug(unicode(response))
-            self.listCameras[cameraname]=False  # set to false as already run.
+        except requests.exceptions.ConnectionError:
+            self.logger.debug(u'connectServer has a Connection Error and cannot connect to BI Server.')
+            self.sleep(5)
+            pass
 
-            vehicles = ['bicycle','car','motorcycle','bus','train']
-            anyobjectfound =False
-            if response['success']==True:
-                for object in response["predictions"]:
-                    carfound = False
-                    label = object["label"]
-                    y_max = int(object["y_max"])
-                    y_min = int(object["y_min"])
-                    x_max = int(object["x_max"])
-                    x_min = int(object["x_min"])
-                    confidence = float(object['confidence'])
-                    if confidence > 0.6:
-                        objectfound = True
-                        if label in vehicles:
-                            carfound = True
-                    draw = ImageDraw.Draw(image)
-                    draw.rectangle(((x_min,y_min),(x_max,y_max)),fill=None,outline='red', width=3)
-                    labelonbox = str(label)+' '+str(confidence)
-                    draw.text((x_min+5,y_min+5),labelonbox, font=ImageFont.truetype(font='Arial.ttf', size=18) ,fill='red')
-                    cropped = imagefresh.crop((x_min, y_min, x_max, y_max))
-                    if label == 'person':
-                        ## check for faces
-                        self.checkfaces2(cropped, ipaddress,cameraname, imagefresh, x_min,x_max,y_min,y_max)
-                        image.save(self.folderLocationFaces+"DeepStateFacesFull_{}_{}.jpg".format(cameraname, str(t.time())))
-                    if carfound:
-                        self.checkcars(liveurlphoto, ipaddress,cameraname, imagefresh, x_min,x_max,y_min,y_max)
-                        image.save(self.folderLocationCars + "DeepStateCarsFull_{}_{}.jpg".format(cameraname, str(t.time())))
+        except:
+            self.logger.exception(u'Caught Exception in threadDownloadImage')
+
+    def threadSendtodeepstate(self):
+        if self.debug2:
+            self.logger.debug(u'threadSendtodeepState called.'+u' & Number of Active Threads:' + unicode(
+                    threading.activeCount()))
+        while True:
+            try:
+                item = self.que.get()
+                cameraname= item.cameraname
+                indigodeviceid = item.indigodeviceid
+                path = item.path
+                if self.debug2:
+                    self.logger.debug(u'Thread:SendtoDeepstate: Processing next item in que: Cameraname:'+unicode(cameraname)+', image file:'+unicode(path)+', from IndigoID:'+unicode(indigodeviceid))
+
+                if self.useLocal:
+                    ipaddress = 'localhost'
+                else:
+                    ipaddress = self.ipaddress
+
+                urltosend = 'http://' + ipaddress + ":" + self.port + "/v1/vision/detection"
+                if self.debug1:
+                    self.logger.debug(urltosend)
+
+                liveurlphoto = open(path, 'rb').read()
+                image = Image.open(path)
+                imagefresh = Image.open(path)
+
+                self.reply = True
+                response = requests.post(urltosend, files={"image": liveurlphoto}, timeout=30).json()
+                self.logger.debug(unicode(response))
+                #self.listCameras[cameraname] = False  # set to false as already run.
+
+                vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train']
+                anyobjectfound = False
+                if response['success'] == True:
+                    for object in response["predictions"]:
                         carfound = False
+                        label = object["label"]
+                        y_max = int(object["y_max"])
+                        y_min = int(object["y_min"])
+                        x_max = int(object["x_max"])
+                        x_min = int(object["x_min"])
+                        confidence = float(object['confidence'])
+                        if confidence > 0.6:
+                            objectfound = True
+                            if label in vehicles:
+                                carfound = True
+                        draw = ImageDraw.Draw(image)
+                        draw.rectangle(((x_min, y_min), (x_max, y_max)), fill=None, outline='red', width=3)
+                        labelonbox = str(label) + ' ' + str(confidence)
+                        draw.text((x_min + 5, y_min + 5), labelonbox, font=ImageFont.truetype(font='Arial.ttf', size=18),
+                                  fill='red')
+                        cropped = imagefresh.crop((x_min, y_min, x_max, y_max))
+                        if label == 'person':
+                            ## check for faces
+                            self.checkfaces2(cropped, ipaddress, cameraname, imagefresh, indigodeviceid, confidence, x_min, x_max, y_min, y_max)
+                            image.save(
+                                self.folderLocationFaces + "DeepStateFacesFull_{}_{}.jpg".format(cameraname, str(t.time())))
+                        if carfound:
+                            self.checkcars(liveurlphoto, ipaddress, cameraname, imagefresh, indigodeviceid, confidence,x_min, x_max,
+                                           y_min, y_max)
+                            image.save(
+                                self.folderLocationCars + "DeepStateCarsFull_{}_{}.jpg".format(cameraname, str(t.time())))
+                            carfound = False
 
-                if anyobjectfound:
-                    #image.save(self.folderLocation+"/DeepState_{}_{}.jpg".format(cameraname, label))
-                    anyobjectfound = False
+                    if anyobjectfound:
+                        # image.save(self.folderLocation+"/DeepState_{}_{}.jpg".format(cameraname, label))
+                        anyobjectfound = False
 
-            else:
-                self.logger.debug('DeepState Request failed:')
+                else:
+                    self.logger.debug(u'Thread:SendtoDeepstate: DeepState Request failed:')
+
+                self.que.task_done()
+                if os.path.exists(path):
+                    os.remove(path)
+                else:
+                    self.logger.error(u"Thread:SendtoDeepstate: Error: deleting temporary file: it appears the file does not exist.  Path:"+unicode(path))
+
+            except Exception as ex:
+                self.logger.exception(u'Thread:SendtoDeepstate:Error sending to Deepstate: ' + unicode(ex))
+                self.reply = False
+
+    def motionTrue(self, arg):
+        if self.debug3:
+            self.logger.debug(u"received Camera motionTrue message: %s" % (arg) )
+        try:
+            urlphoto = arg[0]
+            cameraname = arg[1]
+            pathimage = arg[2]
+            updatetime = arg[3]
+            newimagedownloaded = arg[4]
+            indigodeviceid = arg[5]
+
+            if str(indigodeviceid) not in self.deviceCamerastouse:
+                if self.debug1:
+                    self.logger.debug('Camera not enabled within DeepState Config Settings/Ignored.')
+                #self.logger.debug(unicode(self.deviceCamerastouse))
+                return
+
+            motionTrue = threading.Thread(target=self.threadaddtoQue, args=[urlphoto, cameraname,indigodeviceid])
+            motionTrue.start()
+            # given delayed images over 10 seconds or even longer need to thread below
+            return
 
         except Exception as ex:
-            self.logger.debug('Error sending to Deepstate: '+unicode(ex))
-            self.reply = False
+            self.logger.exception(u'Exception caught in motion true:'+unicode(ex))
+
+    def threadaddtoQue(self, urlphoto,cameraname,indigodeviceid):
+        if self.debug3:
+            self.logger.debug(u'Thread:AdddtoQue called.' + u' & Number of Active Threads:' + unicode(
+                threading.activeCount()))
+        try:
+            if self.superCharge == False:
+                path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
+                ImageThread = threading.Thread(target=self.threadDownloadImage, args=[path, urlphoto])
+                ImageThread.start()
+                self.sleep(0.5)
+                item = deepstateitem(path, indigodeviceid, cameraname)
+                if self.debug1:
+                    self.logger.debug(u'Putting item into DeepState Que: Item:'+unicode(item))
+                self.que.put(item)
+            else:
+                numberofseconds = range( int(self.superChargeimageno) )  #seconds here changed usage to number of images
+                for n in numberofseconds:
+                    self.logger.error(u'Downloading Images:  Image:'+unicode(n) +u' for Camera:'+unicode(cameraname) )
+                    path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
+                    ImageThread = threading.Thread(target=self.threadDownloadImage,
+                                               args=[path, urlphoto])
+                    ImageThread.start()
+                    self.sleep(int(self.superChargedelay))
+                    self.sleep(0.5)#sleep for the delay
+                    item = deepstateitem(path, indigodeviceid, cameraname)
+                    if self.debug1:
+                        self.logger.debug(u'Putting item into DeepState Que: Item.Path:'+unicode(item.path))
+                    self.que.put(item)
+
+            return
+
+        except Exception as e:
+            self.logger.exception(u'Exception caught in Thread Add to Que')
+
