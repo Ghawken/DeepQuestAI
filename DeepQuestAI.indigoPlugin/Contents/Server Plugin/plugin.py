@@ -711,7 +711,7 @@ hair dryer, toothbrush'''
             else:
                 numberofseconds = range( int(self.superChargeimageno) )  #seconds here changed usage to number of images
                 for n in numberofseconds:
-                    self.logger.error(u'Downloading Images:  Image:'+unicode(n) +u' for Camera:'+unicode(cameraname) )
+                    self.logger.debug(u'************** Downloading Images:  Image:'+unicode(n) +u' for Camera:'+unicode(cameraname) )
                     path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
                     ImageThread = threading.Thread(target=self.threadDownloadImage,
                                                args=[path, urlphoto])
