@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<Events>
+  <SupportURL></SupportURL>
+    <Event id="objectFound">
+        <Name>Trigger with Object Dection</Name>
+        <ConfigUI>
+        <Field id="objectType" type="menu">
+            <Label>Object Type :</Label>
+            <List>
+            <Option value="car">Vehicles</Option>
+            <Option value="person">Person</Option>
+        </List>
+        </Field>
+            <Field id="confidence"
+				   type="textfield"
+				   tooltip="Enter lowest confidence to be trigger, from 0 to 1"
+				   default="0.7" >
+				<Label>Confidence level above which to be triggered 0-1 eg. 0.6:</Label>
+			</Field>
+         <Field id="deviceCamera" type="list" rows="14">
+                <Label>From Camera(s)</Label>
+                <List class="indigo.devices" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"/>
+         </Field>
+            <Field id="dontretrigger"
+				   type="textfield"
+				   tooltip="Dont retrigger within this many seconds"
+				   default="10" >
+				<Label>Don't retrigger within this many seconds:</Label>
+			</Field>
+        </ConfigUI>
+    </Event>
+</Events>
+
