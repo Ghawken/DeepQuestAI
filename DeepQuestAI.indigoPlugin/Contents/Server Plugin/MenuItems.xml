@@ -1,9 +1,5 @@
 <?xml version="1.0"?>
 <MenuItems>
-  <MenuItem id="refreshData">
-    <Name>Refresh Data Now...</Name>
-    <CallbackMethod>refreshData</CallbackMethod>
-  </MenuItem>
   <MenuItem id="toggleDebug">
     <Name>Toggle Debugging</Name>
     <CallbackMethod>toggleDebugEnabled</CallbackMethod>

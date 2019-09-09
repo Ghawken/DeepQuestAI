@@ -45,10 +45,11 @@ kDefaultPluginPrefs = {
 }
 
 class deepstateitem:
-    def __init__(self, path, indigodeviceid, cameraname):
+    def __init__(self, path, indigodeviceid, cameraname, utctime):
         self.path = path
         self.indigodeviceid = indigodeviceid
         self.cameraname = cameraname
+        self.utctime = utctime
 
 
 class Plugin(indigo.PluginBase):
@@ -110,6 +111,7 @@ hair dryer, toothbrush'''
         self.useLocal = self.pluginPrefs.get('useLocal', False)
         self.ipaddress = self.pluginPrefs.get('ipaddress', False)
         self.superCharge = self.pluginPrefs.get('superCharge', False)
+        self.confidenceMain = self.pluginPrefs.get('confidenceMain', 0.7)
         self.superChargedelay = self.pluginPrefs.get('superChargedelay', 2)
         self.superChargeimageno = self.pluginPrefs.get('superChargeimageno', 5)  ## actually means number of images
 
@@ -175,6 +177,8 @@ hair dryer, toothbrush'''
             self.useLocal = valuesDict.get('useLocal', False)
             self.ipaddress = valuesDict.get('ipaddress', False)
             self.superCharge = valuesDict.get('superCharge', False)
+            self.confidenceMain = valuesDict.get('confidenceMain', 0.7)
+
             self.superChargeimageno = valuesDict.get('superChargeimageno', 3)
             self.superChargedelay = valuesDict.get('superChargedelay', 3)
             self.port = valuesDict.get('port', '7188')
@@ -226,14 +230,13 @@ hair dryer, toothbrush'''
             while True:
 
 
-                self.debugLog(u" ")
+                #self.debugLog(u" ")
 
-                for dev in indigo.devices.itervalues('self'):
+                #for dev in indigo.devices.itervalues('self'):
 
-                    self.debugLog(u"MainLoop:  {0}:".format(dev.name))
+                 #   self.debugLog(u"MainLoop:  {0}:".format(dev.name))
 
-
-                self.sleep(60)
+                self.sleep(1)
 
         except self.StopThread:
             self.debugLog(u'Restarting/or error. Stopping Main thread.')
@@ -542,7 +545,7 @@ hair dryer, toothbrush'''
                                     indigo.trigger.execute(trigger)
                                 else:
                                     if self.debug5:
-                                        self.logger.error(u'Trigger :'+ unicode(trigger.name) + u' not run again, as current time='+unicode(t.time())+u' and time past run='+unicode(self.triggersTriggered[trigger.id]))
+                                        self.logger.debug(u'Trigger :'+ unicode(trigger.name) + u' not run again, as current time='+unicode(t.time())+u' and time past run='+unicode(self.triggersTriggered[trigger.id]))
                                     # add requesting running and continue
 
 
@@ -589,17 +592,31 @@ hair dryer, toothbrush'''
             self.logger.exception(u'Caught Exception in threadDownloadImage')
 
     def threadSendtodeepstate(self):
-        if self.debug2:
-            self.logger.debug(u'threadSendtodeepState called.'+u' & Number of Active Threads:' + unicode(
-                    threading.activeCount()))
+
         while True:
             try:
-                item = self.que.get()
+                item = self.que.get()   # blocks here until another que items
                 cameraname= item.cameraname
                 indigodeviceid = item.indigodeviceid
                 path = item.path
+                utctime = item.utctime
+
+                timedelay = float(t.time())-float(utctime)
+
                 if self.debug2:
                     self.logger.debug(u'Thread:SendtoDeepstate: Processing next item in que: Cameraname:'+unicode(cameraname)+', image file:'+unicode(path)+', from IndigoID:'+unicode(indigodeviceid))
+                    self.logger.debug(u'Thread:SendtoDeepState: Processing items now '+unicode(timedelay)+u' seconds later than image captured.')
+
+                if timedelay>60:  ## if more than 60 seconds delayed in processing images, skip current item and delete temp image
+                    self.logger.error(u'Thread:SendtoDeepstate:  Processing items now >60 seconds behind image capture.  Aborting this image until resolved.')
+                    if os.path.exists(path):
+                        os.remove(path)
+                    else:
+                        self.logger.error(
+                            u"Thread:SendtoDeepstate: Error: deleting temporary file: it appears the file does not exist.  Path:" + unicode(
+                                path))
+                    self.que.task_done()
+                    continue
 
                 if self.useLocal:
                     ipaddress = 'localhost'
@@ -619,21 +636,30 @@ hair dryer, toothbrush'''
                 self.logger.debug(unicode(response))
                 #self.listCameras[cameraname] = False  # set to false as already run.
 
+
                 vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train']
                 anyobjectfound = False
                 if response['success'] == True:
                     for object in response["predictions"]:
                         carfound = False
                         label = object["label"]
+                        #if self.debug4:
+                            #self.logger.error(u'Checking Found item:'+unicode(label))
                         y_max = int(object["y_max"])
                         y_min = int(object["y_min"])
                         x_max = int(object["x_max"])
                         x_min = int(object["x_min"])
                         confidence = float(object['confidence'])
-                        if confidence > 0.6:
-                            objectfound = True
-                            if label in vehicles:
-                                carfound = True
+
+                        ## if mainconfidence less than completely skip this object
+                        if confidence < float(self.confidenceMain):
+                            if self.debug4:
+                                self.logger.debug(u'Low Confidence for Object:'+unicode(label)+' so skipping.  Checking next.')
+                            continue
+
+                        objectfound = True
+                        if label in vehicles:
+                            carfound = True
                         draw = ImageDraw.Draw(image)
                         draw.rectangle(((x_min, y_min), (x_max, y_max)), fill=None, outline='red', width=3)
                         labelonbox = str(label) + ' ' + str(confidence)
@@ -664,6 +690,15 @@ hair dryer, toothbrush'''
                     os.remove(path)
                 else:
                     self.logger.error(u"Thread:SendtoDeepstate: Error: deleting temporary file: it appears the file does not exist.  Path:"+unicode(path))
+
+            except requests.exceptions.Timeout:
+                self.logger.debug(u'threadaddtoQue has timed out and cannot connect to DeepStateAI')
+                pass
+
+            except requests.exceptions.ConnectionError:
+                self.logger.debug(u'Threadaddtoque has a Connection Error and cannot connect to DeepStateAI.')
+                self.sleep(1)
+                pass
 
             except Exception as ex:
                 self.logger.exception(u'Thread:SendtoDeepstate:Error sending to Deepstate: ' + unicode(ex))
@@ -704,7 +739,7 @@ hair dryer, toothbrush'''
                 ImageThread = threading.Thread(target=self.threadDownloadImage, args=[path, urlphoto])
                 ImageThread.start()
                 self.sleep(0.5)
-                item = deepstateitem(path, indigodeviceid, cameraname)
+                item = deepstateitem(path, indigodeviceid, cameraname, t.time())
                 if self.debug1:
                     self.logger.debug(u'Putting item into DeepState Que: Item:'+unicode(item))
                 self.que.put(item)
@@ -717,13 +752,20 @@ hair dryer, toothbrush'''
                                                args=[path, urlphoto])
                     ImageThread.start()
                     self.sleep(int(self.superChargedelay))
-                    self.sleep(0.5)#sleep for the delay
-                    item = deepstateitem(path, indigodeviceid, cameraname)
+                    #self.sleep(0.5)#sleep for the delay
+                    item = deepstateitem(path, indigodeviceid, cameraname, t.time())
                     if self.debug1:
                         self.logger.debug(u'Putting item into DeepState Que: Item.Path:'+unicode(item.path))
                     self.que.put(item)
+            quesize = int(self.que.qsize())
+            if self.debug2:
+                self.logger.debug(u'Thread:AddtoQue:  Number in que:' + unicode(quesize))
 
+            if quesize> 50:
+                self.logger.error(u'Currently Size of DeepStateAI processing Que is '+unicode(quesize)+u'. Consider your settings if this continues.')
             return
+
+
 
         except Exception as e:
             self.logger.exception(u'Exception caught in Thread Add to Que')

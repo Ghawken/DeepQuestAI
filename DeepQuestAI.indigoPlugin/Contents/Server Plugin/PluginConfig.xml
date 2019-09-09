@@ -46,13 +46,13 @@
 				<Label>Apple Account ID:</Label>
 			</Field>
 
-
+<Field id="sep49" type="separator"/>
             <Field id="deviceCamera" type="list" rows="14">
                 <Label>Enabled Camera(s)</Label>
                 <List class="indigo.devices" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"/>
             </Field>
 
-
+<Field id="sep47" type="separator"/>
 		    <Field id="superCharge" type="checkbox" tooltip="Check to superCharge detection, multiple images seconds apart">
         <Label>SuperCharge Detection </Label>
         <Description>Enable/Disable</Description>
@@ -67,6 +67,14 @@
         <Label>SuperCharge Detection Seconds Apart (secs) </Label>
         <Description>seconds</Description>
              </Field>
+    <Field id="sep42a" type="separator"/>
+            <Field id="confidenceMain" type="textfield" tooltip="Overiding Confidence level to ignore everthing under this level">
+        <Label>Main Confidence Level 0-1 eg. 0.7 </Label>
+        <Description>Ignore everything below this level</Description>
+             </Field>
+
+
+        <Field id="sep43a" type="separator"/>
 
     <Field id="space10" type="label" alignText="right">
         <Label>Debugging Options:</Label>

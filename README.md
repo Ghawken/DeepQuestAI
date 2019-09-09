@@ -59,7 +59,7 @@ Choose between Vehicle and Person
 Enter the desired confidence for this Object.
 When found the Device will be updated with details, including Image link
 
-##Has One Trigger:
+## Has One Trigger:
 
 This is likely the main usage:
 Edit Event Settings:
