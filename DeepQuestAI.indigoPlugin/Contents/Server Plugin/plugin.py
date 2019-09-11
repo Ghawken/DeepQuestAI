@@ -112,6 +112,7 @@ hair dryer, toothbrush'''
         self.ipaddress = self.pluginPrefs.get('ipaddress', False)
         self.superCharge = self.pluginPrefs.get('superCharge', False)
         self.confidenceMain = self.pluginPrefs.get('confidenceMain', 0.7)
+        self.imageScale = self.pluginPrefs.get('imageScale', 100)
         self.superChargedelay = self.pluginPrefs.get('superChargedelay', 2)
         self.superChargeimageno = self.pluginPrefs.get('superChargeimageno', 5)  ## actually means number of images
 
@@ -178,7 +179,7 @@ hair dryer, toothbrush'''
             self.ipaddress = valuesDict.get('ipaddress', False)
             self.superCharge = valuesDict.get('superCharge', False)
             self.confidenceMain = valuesDict.get('confidenceMain', 0.7)
-
+            self.imageScale = valuesDict.get('imageScale', 100)
             self.superChargeimageno = valuesDict.get('superChargeimageno', 3)
             self.superChargedelay = valuesDict.get('superChargedelay', 3)
             self.port = valuesDict.get('port', '7188')
@@ -579,6 +580,7 @@ hair dryer, toothbrush'''
              else:
                  self.logger.debug(u'Issue Downloading Image. Failed.')
 
+
         except requests.exceptions.Timeout:
             self.logger.debug(u'threadDownloadImage has timed out and cannot connect to BI Server.')
             pass
@@ -672,10 +674,9 @@ hair dryer, toothbrush'''
                             image.save(
                                 self.folderLocationFaces + "DeepStateFacesFull_{}_{}.jpg".format(cameraname, str(t.time())))
                         if carfound:
-                            self.checkcars(liveurlphoto, ipaddress, cameraname, imagefresh, indigodeviceid, confidence,x_min, x_max,
+                            self.checkcars(cropped, ipaddress, cameraname, imagefresh, indigodeviceid, confidence,x_min, x_max,
                                            y_min, y_max)
-                            image.save(
-                                self.folderLocationCars + "DeepStateCarsFull_{}_{}.jpg".format(cameraname, str(t.time())))
+                            image.save(       self.folderLocationCars + "DeepStateCarsFull_{}_{}.jpg".format(cameraname, str(t.time())))
                             carfound = False
 
                     if anyobjectfound:
@@ -700,6 +701,10 @@ hair dryer, toothbrush'''
                 self.sleep(1)
                 pass
 
+            except IOError as ex:
+                self.logger.debug(u'Thread:SendtoDeepstate: IO Error: Probably file failed downloading...'+unicode(ex))
+                pass
+
             except Exception as ex:
                 self.logger.exception(u'Thread:SendtoDeepstate:Error sending to Deepstate: ' + unicode(ex))
                 self.reply = False
@@ -708,7 +713,7 @@ hair dryer, toothbrush'''
         if self.debug3:
             self.logger.debug(u"received Camera motionTrue message: %s" % (arg) )
         try:
-            urlphoto = arg[0]
+            urlphoto = arg[0]+'?s='+str(self.imageScale)
             cameraname = arg[1]
             pathimage = arg[2]
             updatetime = arg[3]
@@ -739,7 +744,7 @@ hair dryer, toothbrush'''
                 ImageThread = threading.Thread(target=self.threadDownloadImage, args=[path, urlphoto])
                 ImageThread.start()
                 self.sleep(0.5)
-                item = deepstateitem(path, indigodeviceid, cameraname, t.time())
+                item = deepstateitem(path, indigodeviceid, cameraname, t.time() )
                 if self.debug1:
                     self.logger.debug(u'Putting item into DeepState Que: Item:'+unicode(item))
                 self.que.put(item)
@@ -751,7 +756,7 @@ hair dryer, toothbrush'''
                     ImageThread = threading.Thread(target=self.threadDownloadImage,
                                                args=[path, urlphoto])
                     ImageThread.start()
-                    self.sleep(int(self.superChargedelay))
+                    self.sleep(float(self.superChargedelay))
                     #self.sleep(0.5)#sleep for the delay
                     item = deepstateitem(path, indigodeviceid, cameraname, t.time())
                     if self.debug1:

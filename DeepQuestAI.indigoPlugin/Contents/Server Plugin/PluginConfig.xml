@@ -72,7 +72,11 @@
         <Label>Main Confidence Level 0-1 eg. 0.7 </Label>
         <Description>Ignore everything below this level</Description>
              </Field>
-
+    <Field id="sep47a" type="separator"/>
+            <Field id="imageScale" type="textfield" tooltip="Scale of BI image downloaded">
+        <Label>Main Image Scale 1-100 </Label>
+        <Description>Scale of Image to Use/Save</Description>
+             </Field>
 
         <Field id="sep43a" type="separator"/>
 
