@@ -56,7 +56,7 @@ class deepstateitem:
         self.indigodeviceid = indigodeviceid
         self.cameraname = cameraname
         self.utctime = utctime
-        self.external = bool(external)
+        self.external = external
 
 class Plugin(indigo.PluginBase):
 
