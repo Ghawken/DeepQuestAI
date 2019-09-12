@@ -290,7 +290,9 @@ hair dryer, toothbrush'''
         ImageThread = threading.Thread(target=self.threadSendtodeepstate )
         ImageThread.start()
 
-        self.listenHTTP()
+        serverthread = threading.Thread(target=self.listenHTTP)
+        serverthread.start()
+        #self.listenHTTP()
 
 
 

@@ -72,11 +72,25 @@
         <Label>Main Confidence Level 0-1 eg. 0.7 </Label>
         <Description>Ignore everything below this level</Description>
              </Field>
+
     <Field id="sep47a" type="separator"/>
             <Field id="imageScale" type="textfield" tooltip="Scale of BI image downloaded">
         <Label>Main Image Scale 1-100 </Label>
         <Description>Scale of Image to Use/Save</Description>
              </Field>
+
+    <Field id="sep44cdef27" type="separator"/>
+
+		    <Field id="httpserver" type="checkbox" >
+        <Label>Enable Http Image Server for Control Panels </Label>
+        <Description>Enable/Disable</Description>
+             </Field>
+
+                <Field id="httpport" type="textfield" tooltip="Port for Http Server Default 4142" >
+        <Label>Port:</Label>
+        <Description>Http Server Port Defaults to 4142</Description>
+             </Field>
+
 
         <Field id="sep43a" type="separator"/>
 
