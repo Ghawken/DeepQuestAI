@@ -619,7 +619,7 @@ hair dryer, toothbrush'''
             self.logger.exception(u'Caught Exception in threadDownloadImage')
 
     def threadSendtodeepstate(self):
-        while self.StopThread==False:
+        while True:
             try:
                 item = self.que.get()   # blocks here until another que items
                 cameraname= item.cameraname
