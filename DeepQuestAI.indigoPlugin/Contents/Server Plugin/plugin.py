@@ -19,8 +19,14 @@ import sys
 import shutil
 import logging
 import requests
+from shutil import copyfile
 
 from PIL import Image,ImageDraw,ImageFont
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from SocketServer import ThreadingMixIn
+from os import curdir, sep
+
+import glob
 
 import StringIO
 from Queue import *
@@ -45,12 +51,12 @@ kDefaultPluginPrefs = {
 }
 
 class deepstateitem:
-    def __init__(self, path, indigodeviceid, cameraname, utctime):
+    def __init__(self, path, indigodeviceid, cameraname, utctime, external):
         self.path = path
         self.indigodeviceid = indigodeviceid
         self.cameraname = cameraname
         self.utctime = utctime
-
+        self.external = bool(external)
 
 class Plugin(indigo.PluginBase):
 
@@ -77,7 +83,7 @@ class Plugin(indigo.PluginBase):
                                  datefmt='%Y-%m-%d %H:%M:%S')
         self.plugin_file_handler.setFormatter(pfmt)
 
-
+        self.listenPort =4142
         self.logLevel = int(self.pluginPrefs.get(u"showDebugLevel",'5'))
         self.debugLevel = self.logLevel
         self.indigo_log_handler.setLevel(self.logLevel)
@@ -118,6 +124,13 @@ hair dryer, toothbrush'''
 
         self.port = self.pluginPrefs.get('port', '7188')
         self.deviceCamerastouse = self.pluginPrefs.get('deviceCamera','')
+
+        # below for http server
+        self.imageNoCar = 0
+        self.imageNoCarCrop = 0
+        self.imageNoPerson = 0
+        self.imageNoPersonCrop = 0
+
 
         self.imageTimeout = 10
         self.serverTimeout = 5
@@ -225,8 +238,9 @@ hair dryer, toothbrush'''
 
     def runConcurrentThread(self):
 
-        try:
 
+        try:
+            resetImages = t.time()+360
 
             while True:
 
@@ -238,6 +252,13 @@ hair dryer, toothbrush'''
                  #   self.debugLog(u"MainLoop:  {0}:".format(dev.name))
 
                 self.sleep(1)
+                # below for http server
+                if t.time()>resetImages:
+                    self.imageNoCar = 0
+                    self.imageNoCarCrop = 0
+                    self.imageNoPerson = 0
+                    self.imageNoPersonCrop = 0
+                    resetImages = t.time()+ 360
 
         except self.StopThread:
             self.debugLog(u'Restarting/or error. Stopping Main thread.')
@@ -268,6 +289,8 @@ hair dryer, toothbrush'''
         self.logger.debug(u'Starting DeepState send Thread:')
         ImageThread = threading.Thread(target=self.threadSendtodeepstate )
         ImageThread.start()
+
+        self.listenHTTP()
 
 
 
@@ -412,7 +435,7 @@ hair dryer, toothbrush'''
         self.logger.debug("received broadcasterShutdown message")
         return
 
-    def checkcars(self, liveurlphoto, ipaddress, cameraname, image, indigodeviceid, confidence, x_min,x_max,y_min,y_max):
+    def checkcars(self, liveurlphoto, ipaddress, cameraname, image, indigodeviceid, confidence, x_min,x_max,y_min,y_max, external):
         self.logger.debug('Now checking for Cars....')
         urltosend = 'http://' + ipaddress + ":7188/v1/vision/face"
         try:
@@ -421,11 +444,11 @@ hair dryer, toothbrush'''
             cropped.save(filename)
 
             self.checkDevices(cropped, 'car', ipaddress, cameraname, image, filename, confidence)
-            self.triggerCheck('car', cameraname, indigodeviceid, 'objectTrigger', confidence)
+            self.triggerCheck('car', cameraname, indigodeviceid, 'objectTrigger', confidence, external)
         except Exception as ex:
             self.logger.debug('Error Saving to Vehicles: ' + unicode(ex))
 
-    def checkfaces2(self, liveurlphoto, ipaddress, cameraname, image, indigodeviceid, confidence, x_min,x_max,y_min,y_max):
+    def checkfaces2(self, liveurlphoto, ipaddress, cameraname, image, indigodeviceid, confidence, x_min,x_max,y_min,y_max, external):
         self.logger.debug('Now checking for Faces 2/Cropping only....')
         urltosend = 'http://' + ipaddress + ":7188/v1/vision/face"
         try:
@@ -434,7 +457,7 @@ hair dryer, toothbrush'''
             cropped.save(filename)
 
             self.checkDevices(cropped, 'person', ipaddress, cameraname, image, filename, confidence)
-            self.triggerCheck('person', cameraname, indigodeviceid, 'objectTrigger', confidence)
+            self.triggerCheck('person', cameraname, indigodeviceid, 'objectTrigger', confidence, external)
 
         except Exception as ex:
             self.logger.debug('Error Saving to Vehicles: ' + unicode(ex))
@@ -499,7 +522,7 @@ hair dryer, toothbrush'''
         del self.triggers[trigger.id]
 
 
-    def triggerCheck(self, objectname, cameraname, indigodeviceid, event, confidence):
+    def triggerCheck(self, objectname, cameraname, indigodeviceid, event, confidence, external):
 
         if self.debug2:
             self.logger.debug('triggerCheck run. Object:'+unicode(objectname)+' Camera:' + unicode(cameraname) + ' Event:' + unicode(event))
@@ -518,7 +541,7 @@ hair dryer, toothbrush'''
                     if str(trigger.pluginProps['objectType'])== str(objectname):
                         triggerconfidence = trigger.pluginProps.get('confidence',0.6)
 
-                        if str(indigodeviceid) in trigger.pluginProps['deviceCamera'] and float(confidence) >= float(triggerconfidence):
+                        if str(indigodeviceid) in trigger.pluginProps['deviceCamera'] and float(confidence) >= float(triggerconfidence) or (external == True and float(confidence>=float(triggerconfidence))):
                             # check if cameraname within list - although might be device ID
                             if self.debug5:
                                 self.logger.debug("===== Executing objectFound Trigger %s (%d) and confidence is %s" % (
@@ -594,14 +617,14 @@ hair dryer, toothbrush'''
             self.logger.exception(u'Caught Exception in threadDownloadImage')
 
     def threadSendtodeepstate(self):
-
-        while True:
+        while self.StopThread==False:
             try:
                 item = self.que.get()   # blocks here until another que items
                 cameraname= item.cameraname
                 indigodeviceid = item.indigodeviceid
                 path = item.path
                 utctime = item.utctime
+                external = item.external
 
                 timedelay = float(t.time())-float(utctime)
 
@@ -638,7 +661,6 @@ hair dryer, toothbrush'''
                 self.logger.debug(unicode(response))
                 #self.listCameras[cameraname] = False  # set to false as already run.
 
-
                 vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train']
                 anyobjectfound = False
                 if response['success'] == True:
@@ -670,12 +692,11 @@ hair dryer, toothbrush'''
                         cropped = imagefresh.crop((x_min, y_min, x_max, y_max))
                         if label == 'person':
                             ## check for faces
-                            self.checkfaces2(cropped, ipaddress, cameraname, imagefresh, indigodeviceid, confidence, x_min, x_max, y_min, y_max)
+                            self.checkfaces2(cropped, ipaddress, cameraname, imagefresh, indigodeviceid, confidence, x_min, x_max, y_min, y_max, external)
                             image.save(
                                 self.folderLocationFaces + "DeepStateFacesFull_{}_{}.jpg".format(cameraname, str(t.time())))
                         if carfound:
-                            self.checkcars(cropped, ipaddress, cameraname, imagefresh, indigodeviceid, confidence,x_min, x_max,
-                                           y_min, y_max)
+                            self.checkcars(cropped, ipaddress, cameraname, imagefresh, indigodeviceid, confidence,x_min, x_max,  y_min, y_max, external)
                             image.save(       self.folderLocationCars + "DeepStateCarsFull_{}_{}.jpg".format(cameraname, str(t.time())))
                             carfound = False
 
@@ -691,6 +712,10 @@ hair dryer, toothbrush'''
                     os.remove(path)
                 else:
                     self.logger.error(u"Thread:SendtoDeepstate: Error: deleting temporary file: it appears the file does not exist.  Path:"+unicode(path))
+
+            except self.StopThread:
+                self.logger.debug(u'Self.Stop Thread called')
+                pass
 
             except requests.exceptions.Timeout:
                 self.logger.debug(u'threadaddtoQue has timed out and cannot connect to DeepStateAI')
@@ -708,6 +733,36 @@ hair dryer, toothbrush'''
             except Exception as ex:
                 self.logger.exception(u'Thread:SendtoDeepstate:Error sending to Deepstate: ' + unicode(ex))
                 self.reply = False
+    ## Actions.xml
+
+    def sendtoDeepState(self, action):
+        self.logger.debug(u"Send to DeepState Called as Action.")
+
+        imageType = action.props.get('imageType','')
+        imageLocation = action.props.get('ImageLocation','')
+
+        if imageType=='' or imageLocation =='':
+            self.logger.debug(u'Please enter values for Action.  Aborted')
+            return
+        try:
+            if imageType == 'URL':
+                Externaladd = threading.Thread(target=self.threadaddtoQue, args=[imageLocation, 'ExternalActionURL', 1, True])
+                Externaladd.start()
+                return
+            if imageType == 'FILE':
+                path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
+                copyfile(imageLocation,path)
+                ## create a temporary file from the one given - otherwise will be deleted
+                item = deepstateitem(path, 1, 'ExternalActionFile', t.time(), True)
+                if self.debug1:
+                    self.logger.debug(u'Putting item into DeepState Que: Item:' + unicode(item))
+                self.que.put(item)
+        except Exception as ex:
+            self.logger.exception(u'Caught Exception:  Some thing wrong with File Path or URL'+unicode(ex))
+            return
+        return
+
+    ##
 
     def motionTrue(self, arg):
         if self.debug3:
@@ -726,7 +781,7 @@ hair dryer, toothbrush'''
                 #self.logger.debug(unicode(self.deviceCamerastouse))
                 return
 
-            motionTrue = threading.Thread(target=self.threadaddtoQue, args=[urlphoto, cameraname,indigodeviceid])
+            motionTrue = threading.Thread(target=self.threadaddtoQue, args=[urlphoto, cameraname,indigodeviceid, False])
             motionTrue.start()
             # given delayed images over 10 seconds or even longer need to thread below
             return
@@ -734,17 +789,17 @@ hair dryer, toothbrush'''
         except Exception as ex:
             self.logger.exception(u'Exception caught in motion true:'+unicode(ex))
 
-    def threadaddtoQue(self, urlphoto,cameraname,indigodeviceid):
+    def threadaddtoQue(self, urlphoto,cameraname,indigodeviceid, external):
         if self.debug3:
             self.logger.debug(u'Thread:AdddtoQue called.' + u' & Number of Active Threads:' + unicode(
                 threading.activeCount()))
         try:
-            if self.superCharge == False:
+            if self.superCharge == False or external==True:
                 path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
                 ImageThread = threading.Thread(target=self.threadDownloadImage, args=[path, urlphoto])
                 ImageThread.start()
                 self.sleep(0.5)
-                item = deepstateitem(path, indigodeviceid, cameraname, t.time() )
+                item = deepstateitem(path, indigodeviceid, cameraname, t.time(),external )
                 if self.debug1:
                     self.logger.debug(u'Putting item into DeepState Que: Item:'+unicode(item))
                 self.que.put(item)
@@ -758,7 +813,7 @@ hair dryer, toothbrush'''
                     ImageThread.start()
                     self.sleep(float(self.superChargedelay))
                     #self.sleep(0.5)#sleep for the delay
-                    item = deepstateitem(path, indigodeviceid, cameraname, t.time())
+                    item = deepstateitem(path, indigodeviceid, cameraname, t.time(),external)
                     if self.debug1:
                         self.logger.debug(u'Putting item into DeepState Que: Item.Path:'+unicode(item.path))
                     self.que.put(item)
@@ -770,8 +825,119 @@ hair dryer, toothbrush'''
                 self.logger.error(u'Currently Size of DeepStateAI processing Que is '+unicode(quesize)+u'. Consider your settings if this continues.')
             return
 
-
+        except self.StopThread:
+            self.logger.debug(u'Self.Stop Thread called')
+            pass
 
         except Exception as e:
             self.logger.exception(u'Exception caught in Thread Add to Que')
 
+    def listenHTTP(self):
+        try:
+            self.debugLog(u"Starting HTTP Image Server  thread")
+            indigo.server.log(u"Http Server Image Server on TCP port " + str(self.listenPort))
+            self.server = HTTPServer(('', self.listenPort), lambda *args: httpHandler(self, *args))
+            self.server.serve_forever()
+
+        except self.StopThread:
+            self.logger.debug(u'Self.Stop Thread called')
+            pass
+        except:
+            self.logger.exception(u'Caught Exception in ListenHttp')
+
+#class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+ #   """Handle requests in a separate thread."""
+
+class httpHandler(BaseHTTPRequestHandler):
+    def __init__(self,plugin, *args):
+        self.plugin=plugin
+        #self.imageNo = self.plugin.imageNo
+        #self.logger = logger
+        self.plugin.debugLog(u'New Http Handler thread:'+threading.currentThread().getName()+", total threads: "+str(threading.activeCount()))
+        BaseHTTPRequestHandler.__init__(self, *args)
+
+    def date_sortfiles(self,path):
+        self.plugin.logger.debug(u'Date_Sort Files called...')
+        files = list(filter(os.path.isfile,glob.glob(path)))
+        files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+        # return newish first
+        return files
+
+
+    def do_GET(self):
+
+        try:
+            if self.path == "/carfull.html":
+                self.send_response(200)
+                mimetype = 'image/jpg'
+                self.send_header('Content-type', mimetype)
+                self.end_headers()
+                listFiles = self.date_sortfiles(self.plugin.folderLocationCars+'DeepStateCarsFull*.jpg')
+                self.plugin.imageNoCar= self.plugin.imageNoCar+1
+                if self.plugin.imageNoCar > len(listFiles):
+                    self.plugin.imageNoCar = 0
+                #self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
+                self.plugin.logger.debug(u'self.plugin.imageNoCar ='+unicode(self.plugin.imageNoCar))
+                sendReply = False
+                file = open(listFiles[self.plugin.imageNoCar], 'rb')
+                self.wfile.write(file.read())
+                file.close()
+
+            if self.path == "/carcrop.html":
+                self.send_response(200)
+                mimetype = 'image/jpg'
+                self.send_header('Content-type', mimetype)
+                self.end_headers()
+                listFiles = self.date_sortfiles(self.plugin.folderLocationCars+'DeepStateCars_*.jpg')
+                self.plugin.imageNoCarCrop= self.plugin.imageNoCarCrop+1
+                if self.plugin.imageNoCarCrop > len(listFiles):
+                    self.plugin.imageNoCarCrop = 0
+                #self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
+                self.plugin.logger.debug(u'self.plugin.imageNo ='+unicode(self.plugin.imageNoCarCrop))
+                sendReply = False
+                file = open(listFiles[self.plugin.imageNoCarCrop], 'rb')
+                self.wfile.write(file.read())
+                file.close()
+
+            if self.path == "/personfull.html":
+                self.send_response(200)
+                mimetype = 'image/jpg'
+                self.send_header('Content-type', mimetype)
+                self.end_headers()
+                listFiles = self.date_sortfiles(self.plugin.folderLocationFaces + 'DeepStateFacesFull*.jpg')
+                self.plugin.imageNoPerson = self.plugin.imageNoPerson + 1
+                if self.plugin.imageNoPerson > len(listFiles):
+                    self.plugin.imageNoPerson = 0
+                # self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
+                self.plugin.logger.debug(u'self.plugin.imageNoPerson =' + unicode(self.plugin.imageNoPerson))
+                sendReply = False
+                file = open(listFiles[self.plugin.imageNoPerson], 'rb')
+                self.wfile.write(file.read())
+                file.close()
+
+            if self.path == "/personcrop.html":
+                self.send_response(200)
+                mimetype = 'image/jpg'
+                self.send_header('Content-type', mimetype)
+                self.end_headers()
+                listFiles = self.date_sortfiles(self.plugin.folderLocationFaces + 'DeepStateFaces_*.jpg')
+                self.plugin.imageNoPersonCrop = self.plugin.imageNoPersonCrop + 1
+                if self.plugin.imageNoPersonCrop > len(listFiles):
+                    self.plugin.imageNoPersonCrop = 0
+                # self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
+                self.plugin.logger.debug(u'self.plugin.imageNoPersonCrop =' + unicode(self.plugin.imageNoPersonCrop))
+                sendReply = False
+                file = open(listFiles[self.plugin.imageNoPersonCrop], 'rb')
+                self.wfile.write(file.read())
+                file.close()
+
+            return
+
+        except self.StopThread:
+            self.logger.debug(u'Self.Stop Thread called')
+            pass
+
+        except IOError:
+            self.plugin.logger.exception()
+        except Exception as ex:
+            self.plugin.logger.exception(u'Exception'+unicode(ex))

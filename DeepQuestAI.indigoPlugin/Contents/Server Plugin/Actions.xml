@@ -1,6 +1,27 @@
 <?xml version="1.0"?>
 <Actions>
+    <Action id="sendURL" uiPath="DeviceActions">
+        <Name>Send Image to DeepState</Name>
+        <CallbackMethod>sendtoDeepState</CallbackMethod>
+            <ConfigUI>
+        <Field id="imageType" type="menu">
+            <Label>Image Type :</Label>
+            <List>
+            <Option value="URL">URL</Option>
+            <Option value="FILE">File</Option>
+        </List>
+        </Field>
+        <Field id="ImageLocation"
+				   type="textfield"
+				   tooltip="Enter URL or Image path"
+				   default=""
+                  >
 
+				<Label>Path or URL to use:</Label>
+			</Field>
+        <Field id="sep3" type="separator"/>
+    </ConfigUI>
+    </Action>
 
   
 </Actions>
