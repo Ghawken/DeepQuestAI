@@ -76,7 +76,23 @@
         Number of images, and time these images are apart are above
     </Label>
     </Field>
-
+    <Field id="sep42aaa" type="separator"/>
+            <Field id="timeLimit" type="textfield" tooltip="Seconds to wait before aborting image checking">
+        <Label>Time to allow before Aborting Image seconds </Label>
+        <Description></Description>
+             </Field>
+    <Field id="info33" type="label" fontSize="small">
+    <Label>
+        The above setting is the time between image taken and image being processed
+        that is allowed to pass before, skipping, aborting, deleting image
+        Defaults to 60 seconds
+        eg. if Image processing 60 seconds behind image capture will abort until
+        catches up
+        Velocity also is considered, if time processing improving >5 seconds each
+        image will continue.  Will not abort.
+    </Label>
+    </Field>
+    <Field id="sep47aaa" type="separator"/>
 
     <Field id="sep42a" type="separator"/>
             <Field id="confidenceMain" type="textfield" tooltip="Overiding Confidence level to ignore everthing under this level">

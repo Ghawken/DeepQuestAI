@@ -83,6 +83,8 @@ class Plugin(indigo.PluginBase):
                                  datefmt='%Y-%m-%d %H:%M:%S')
         self.plugin_file_handler.setFormatter(pfmt)
 
+        self.previoustimeDelay = 0
+
         self.listenPort =4142
         self.logLevel = int(self.pluginPrefs.get(u"showDebugLevel",'5'))
         self.debugLevel = self.logLevel
@@ -121,6 +123,7 @@ hair dryer, toothbrush'''
         self.imageScale = self.pluginPrefs.get('imageScale', 100)
         self.superChargedelay = self.pluginPrefs.get('superChargedelay', 2)
         self.superChargeimageno = self.pluginPrefs.get('superChargeimageno', 5)  ## actually means number of images
+        self.timeLimit = self.pluginPrefs.get('timeLimit', 60)
 
         self.httpserver = self.pluginPrefs.get('httpserver', True)
         self.httpport = self.pluginPrefs.get('httpport',4142)
@@ -155,6 +158,7 @@ hair dryer, toothbrush'''
         self.deviceNeedsUpdated = ''
 
         self.que = Queue()
+        self.quesize = 0
 
         if MajorProblem > 0:
             plugin = indigo.server.getPlugin('com.GlennNZ.indigoplugin.DeepQuestAI')
@@ -198,6 +202,8 @@ hair dryer, toothbrush'''
             self.confidenceMain = valuesDict.get('confidenceMain', 0.7)
             self.imageScale = valuesDict.get('imageScale', 100)
             self.superChargeimageno = valuesDict.get('superChargeimageno', 3)
+            self.timeLimit = valuesDict.get('timeLimit', 60)
+
             self.superChargedelay = valuesDict.get('superChargedelay', 3)
             self.port = valuesDict.get('port', '7188')
             self.logLevel = int(valuesDict.get("showDebugLevel",'5'))
@@ -630,6 +636,8 @@ hair dryer, toothbrush'''
         while True:
             try:
                 item = self.que.get()   # blocks here until another que items
+                ## blocks here until next item
+
                 cameraname= item.cameraname
                 indigodeviceid = item.indigodeviceid
                 path = item.path
@@ -637,13 +645,25 @@ hair dryer, toothbrush'''
                 external = item.external
 
                 timedelay = float(t.time())-float(utctime)
+                pasttimedelay = self.previoustimeDelay
+
+                ## add velocity setting as well
+                velocity = timedelay - pasttimedelay
+                if self.debug2:
+                    self.logger.debug(u'Thread:SendtoDeepState: Processing: Velocity here:'+unicode(velocity))
+                self.previoustimeDelay = timedelay ## update to new timedelay value
+                #self.quesizeold = int(self.que.qsize())
+
+                #quesizedelta = self.quesize - int(self.que.qsize())
+                #self.logger.error(u'Thread:SendtoDeepState: Processing: Que Size: '+unicode(self.quesize)+u' and delta:'+unicode(quesizedelta))
+
 
                 if self.debug2:
                     self.logger.debug(u'Thread:SendtoDeepstate: Processing next item in que: Cameraname:'+unicode(cameraname)+', image file:'+unicode(path)+', from IndigoID:'+unicode(indigodeviceid))
                     self.logger.debug(u'Thread:SendtoDeepState: Processing items now '+unicode(timedelay)+u' seconds later than image captured.')
 
-                if timedelay>60:  ## if more than 60 seconds delayed in processing images, skip current item and delete temp image
-                    self.logger.error(u'Thread:SendtoDeepstate:  Processing items now >60 seconds behind image capture.  Aborting this image until resolved.')
+                if timedelay> int(self.timeLimit) and velocity > -5:  ## if more than 60 seconds delayed in processing images, skip current item and delete temp image
+                    self.logger.info(u'Thread:SendtoDeepstate:  Processing items now '+unicode(self.timeLimit)+u' seconds behind image capture, and velocity >5 positive.  Aborting this image until resolved.')
                     if os.path.exists(path):
                         os.remove(path)
                     else:
@@ -863,12 +883,12 @@ hair dryer, toothbrush'''
                     if self.debug1:
                         self.logger.debug(u'Putting item into DeepState Que: Item.Path:'+unicode(item.path))
                     self.que.put(item)
-            quesize = int(self.que.qsize())
+            self.quesize = int(self.que.qsize())
             if self.debug2:
-                self.logger.debug(u'Thread:AddtoQue:  Number in que:' + unicode(quesize))
+                self.logger.debug(u'Thread:AddtoQue:  Number in que:' + unicode(self.quesize))
 
-            if quesize> 50:
-                self.logger.error(u'Currently Size of DeepStateAI processing Que is '+unicode(quesize)+u'. Consider your settings if this continues.')
+            if self.quesize> 50:
+                self.logger.info(u'Currently Size of DeepStateAI processing Que is '+unicode(self.quesize)+u'. Consider your settings if this continues.')
             return
 
         except self.StopThread:
