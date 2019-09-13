@@ -753,6 +753,34 @@ hair dryer, toothbrush'''
 
         return
 
+    def setMainConfidence(self, action):
+        self.logger.debug(u"setMainConfidence Called as Action.")
+        confidenceLevel = action.props.get('confidence',0.7)
+        self.confidenceMain = confidenceLevel
+        self.pluginPrefs['confidenceMain']= self.confidenceMain
+        self.logger.debug(u'Main Confidence level now set to :'+unicode(self.confidenceMain))
+        return
+
+    def setCameras(self, action):
+        self.logger.debug(u"setCameras Called as Action.")
+        deviceCameras = action.props.get('deviceCamera',0.7)
+        self.deviceCamerastouse = deviceCameras
+        self.pluginPrefs['deviceCamera']= self.deviceCamerastouse
+        self.logger.debug(u'Cameras Enabled now now set to :'+unicode(self.deviceCamerastouse))
+        return
+
+    def setSupercharge(self, action):
+        self.logger.debug(u"set SuperCharge Called as Action.")
+        self.superCharge = action.props.get('superCharge', False)
+        self.superChargedelay = action.props.get('superChargedelay', 2)
+        self.superChargeimageno = action.props.get('superChargeimageno', 5)
+
+        self.pluginPrefs['superCharge']= self.superCharge
+        self.pluginPrefs['superChargedelay'] = self.superChargedelay
+        self.pluginPrefs['superChargeimageno'] = self.superChargeimageno
+        self.logger.debug(u'SuperCharge :'+unicode(self.superCharge)+'  Delay:'+unicode(self.superChargedelay) +u' and Image Number:'+unicode(self.superChargeimageno) )
+        return
+
     def sendtoDeepState(self, action):
         self.logger.debug(u"Send to DeepState Called as Action.")
 

@@ -26,6 +26,47 @@
         <CallbackMethod>resetImageTimers</CallbackMethod>
 
     </Action>
-  
+   <Action id="setMainConfidence">
+        <Name>Set Main Confidence Level</Name>
+        <CallbackMethod>setMainConfidence</CallbackMethod>
+        <ConfigUI>
+            <Field type="textfield" id="confidence">
+                <Label>Confidence 0.1-1</Label>
+            </Field>
+        </ConfigUI>
+    </Action>
+
+    <Action id="setCameras">
+        <Name>Set Cameras Enabled</Name>
+        <CallbackMethod>setCameras</CallbackMethod>
+        <ConfigUI>
+            <Field id="deviceCamera" type="list" rows="14">
+                <Label>Enabled Camera(s)</Label>
+                <List class="indigo.devices" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"/>
+            </Field>
+        </ConfigUI>
+    </Action>
+
+    <Action id="setSupercharge">
+        <Name>Set SuperCharge Settings</Name>
+        <CallbackMethod>setSupercharge</CallbackMethod>
+        <ConfigUI>
+            <Field id="superCharge" type="checkbox" tooltip="Check to superCharge detection, multiple images seconds apart">
+        <Label>SuperCharge Detection </Label>
+        <Description>Enable/Disable</Description>
+             </Field>
+
+		    <Field id="superChargeimageno" type="textfield" tooltip="Number of Images to superCharge detection, multiple images seconds apart">
+        <Label>SuperCharge Images Number: </Label>
+        <Description>Number of Images:</Description>
+             </Field>
+
+        <Field id="superChargedelay" type="textfield" tooltip="Delay in seconds to superCharge detection, multiple images seconds apart">
+        <Label>SuperCharge Detection Seconds Apart (secs) </Label>
+        <Description>seconds</Description>
+             </Field>
+        </ConfigUI>
+    </Action>
+
 </Actions>
 
