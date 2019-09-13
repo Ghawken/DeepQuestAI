@@ -13,11 +13,12 @@
 
 			<Field id="API"
 				   type="textfield"
+                   hidden="True"
 				   tooltip="Enter the DeepQuest API"
 				   default="enterDeepQuestAPI">
 				<Label>Enter your DeepQuest API:</Label>
 			</Field>
-		    <Field id="useLocal" type="checkbox" tooltip="Check to enable use of local server, else enter IP Address">
+		    <Field id="useLocal" type="checkbox" tooltip="Check to enable use of local server, else enter IP Address" hidden="True">
         <Label>Use local DeepQuestAI service </Label>
         <Description>Enable/Disable</Description>
              </Field>
@@ -26,9 +27,9 @@
 				   type="textfield"
 				   tooltip="Enter ipaddress or localhost checkbox"
 				   default=""
-                   visibleBindingId="useLocal" visibleBindingValue="false">
+                   >
 
-				<Label>Enter your Ip Address of Service:</Label>
+				<Label>Enter your Ip Address of DeepState Service:</Label>
 			</Field>
             <Field id="port"
 				   type="textfield"
@@ -62,30 +63,46 @@
         <Label>SuperCharge Images Number: </Label>
         <Description>Number of Images:</Description>
              </Field>
-    <Field id="info2" type="label" fontSize="small">
-    <Label>
-        The above setting SuperCharges Detection, just cautiously depending
-        on Cameras enabled.When Enabled - will pull further images following
-        motion for checking.
-        Number of images, and time these images are apart are set below
-    </Label>
-    </Field>
+
         <Field id="superChargedelay" type="textfield" tooltip="Delay in seconds to superCharge detection, multiple images seconds apart">
         <Label>SuperCharge Detection Seconds Apart (secs) </Label>
         <Description>seconds</Description>
              </Field>
+    <Field id="info2" type="label" fontSize="small">
+    <Label>
+        The above setting SuperCharges Detection, use cautiously depending
+        on Cameras enabled.When Enabled - will pull further images following
+        motion for checking.
+        Number of images, and time these images are apart are above
+    </Label>
+    </Field>
+
+
     <Field id="sep42a" type="separator"/>
             <Field id="confidenceMain" type="textfield" tooltip="Overiding Confidence level to ignore everthing under this level">
         <Label>Main Confidence Level 0-1 eg. 0.7 </Label>
         <Description>Ignore everything below this level</Description>
              </Field>
-
+    <Field id="info3" type="label" fontSize="small">
+    <Label>
+        The above setting sets confidence level for everything.
+        Nothing below this level will be saved/triggered or
+        acted on.
+        Can change this with Action for Day/Night differences
+    </Label>
+    </Field>
     <Field id="sep47a" type="separator"/>
             <Field id="imageScale" type="textfield" tooltip="Scale of BI image downloaded">
         <Label>Main Image Scale 1-100 </Label>
         <Description>Scale of Image to Use/Save</Description>
              </Field>
-
+    <Field id="info4" type="label" fontSize="small">
+    <Label>
+        The above setting sets image scale to use for DeepState
+        Uses BlueIris to scale image as per setting above
+        Default 100%
+    </Label>
+    </Field>
     <Field id="sep44cdef27" type="separator"/>
 
 		    <Field id="httpserver" type="checkbox" >
