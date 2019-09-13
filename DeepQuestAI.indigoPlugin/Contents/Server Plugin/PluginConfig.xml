@@ -62,7 +62,14 @@
         <Label>SuperCharge Images Number: </Label>
         <Description>Number of Images:</Description>
              </Field>
-
+    <Field id="info2" type="label" fontSize="small">
+    <Label>
+        The above setting SuperCharges Detection, just cautiously depending
+        on Cameras enabled.When Enabled - will pull further images following
+        motion for checking.
+        Number of images, and time these images are apart are set below
+    </Label>
+    </Field>
         <Field id="superChargedelay" type="textfield" tooltip="Delay in seconds to superCharge detection, multiple images seconds apart">
         <Label>SuperCharge Detection Seconds Apart (secs) </Label>
         <Description>seconds</Description>
@@ -91,6 +98,15 @@
         <Description>Http Server Port Defaults to 4142</Description>
              </Field>
 
+    <Field id="info1" type="label" fontSize="small">
+    <Label>
+        The above setting enables the Plugins 2nd function that of a Html server, serving recently created images for use in Control Pages.  Enables use of http://IndigoIP:4142/carfull.html or /carcrop.html or /personfull.html or personcrop.html
+
+        This will show most recent images of the selected, found examples, with every refresh will show next image etc.etc. Action Group within plugin to return to Image 0 - most recent.
+
+        If going from Disabled -> Enabled will need plugin restarted to correctly function.
+    </Label>
+    </Field>
 
         <Field id="sep43a" type="separator"/>
 

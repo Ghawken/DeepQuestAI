@@ -122,6 +122,10 @@ hair dryer, toothbrush'''
         self.superChargedelay = self.pluginPrefs.get('superChargedelay', 2)
         self.superChargeimageno = self.pluginPrefs.get('superChargeimageno', 5)  ## actually means number of images
 
+        self.httpserver = self.pluginPrefs.get('httpserver', True)
+        self.httpport = self.pluginPrefs.get('httpport',4142)
+
+
         self.port = self.pluginPrefs.get('port', '7188')
         self.deviceCamerastouse = self.pluginPrefs.get('deviceCamera','')
 
@@ -198,6 +202,10 @@ hair dryer, toothbrush'''
             self.port = valuesDict.get('port', '7188')
             self.logLevel = int(valuesDict.get("showDebugLevel",'5'))
             self.deviceCamerastouse = valuesDict.get('deviceCamera','')
+
+            self.httpport = valuesDict.get('httpport',4142)
+            self.httpserver = valuesDict.get('httpserver',True)
+
             self.debug1 = valuesDict.get('debug1', False)
             self.debug2 = valuesDict.get('debug2', False)
             self.debug3 = valuesDict.get('debug3', False)
@@ -736,6 +744,14 @@ hair dryer, toothbrush'''
                 self.logger.exception(u'Thread:SendtoDeepstate:Error sending to Deepstate: ' + unicode(ex))
                 self.reply = False
     ## Actions.xml
+    def resetImageTimers(self, action):
+        self.logger.debug(u"resetImageTimers Called as Action.")
+        self.imageNoCar = 0
+        self.imageNoCarCrop = 0
+        self.imageNoPerson = 0
+        self.imageNoPersonCrop = 0
+
+        return
 
     def sendtoDeepState(self, action):
         self.logger.debug(u"Send to DeepState Called as Action.")
@@ -837,9 +853,10 @@ hair dryer, toothbrush'''
     def listenHTTP(self):
         try:
             self.debugLog(u"Starting HTTP Image Server  thread")
-            indigo.server.log(u"Http Server Image Server on TCP port " + str(self.listenPort))
-            self.server = HTTPServer(('', self.listenPort), lambda *args: httpHandler(self, *args))
-            self.server.serve_forever()
+            if self.httpserver:
+                indigo.server.log(u"Http Server Image Server on TCP port " + str(self.httpport))
+                self.server = HTTPServer(('', int(self.httpport)), lambda *args: httpHandler(self, *args))
+                self.server.serve_forever()
 
         except self.StopThread:
             self.logger.debug(u'Self.Stop Thread called')
@@ -852,19 +869,24 @@ hair dryer, toothbrush'''
 
 class httpHandler(BaseHTTPRequestHandler):
     def __init__(self,plugin, *args):
-        self.plugin=plugin
+        try:
+            self.plugin=plugin
         #self.imageNo = self.plugin.imageNo
         #self.logger = logger
-        self.plugin.debugLog(u'New Http Handler thread:'+threading.currentThread().getName()+", total threads: "+str(threading.activeCount()))
-        BaseHTTPRequestHandler.__init__(self, *args)
+            self.plugin.debugLog(u'New Http Handler thread:'+threading.currentThread().getName()+", total threads: "+str(threading.activeCount()))
+            BaseHTTPRequestHandler.__init__(self, *args)
+        except Exception as ex:
+            self.plugin.logger.exception(u'httpHandler init caught Exception'+unicode(ex))
 
     def date_sortfiles(self,path):
-        self.plugin.logger.debug(u'Date_Sort Files called...')
-        files = list(filter(os.path.isfile,glob.glob(path)))
-        files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-        # return newish first
-        return files
-
+        try:
+            self.plugin.logger.debug(u'Date_Sort Files called...')
+            files = list(filter(os.path.isfile,glob.glob(path)))
+            files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+            # return newish first
+            return files
+        except Exception as ex:
+            self.plugin.logger.debug(u'Error in Data_SortFiles'+unicode(ex))
 
     def do_GET(self):
 
@@ -895,7 +917,7 @@ class httpHandler(BaseHTTPRequestHandler):
                 if self.plugin.imageNoCarCrop > len(listFiles):
                     self.plugin.imageNoCarCrop = 0
                 #self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
-                self.plugin.logger.debug(u'self.plugin.imageNo ='+unicode(self.plugin.imageNoCarCrop))
+                self.plugin.logger.debug(u'self.plugin.imageNoCarCrop ='+unicode(self.plugin.imageNoCarCrop))
                 sendReply = False
                 file = open(listFiles[self.plugin.imageNoCarCrop], 'rb')
                 self.wfile.write(file.read())
@@ -935,7 +957,7 @@ class httpHandler(BaseHTTPRequestHandler):
 
             return
 
-        except self.StopThread:
+        except self.plugin.StopThread:
             self.logger.debug(u'Self.Stop Thread called')
             pass
 

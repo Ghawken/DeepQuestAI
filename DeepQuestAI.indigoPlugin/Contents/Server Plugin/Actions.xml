@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <Actions>
-    <Action id="sendURL" uiPath="DeviceActions">
+    <Action id="sendURL" >
         <Name>Send Image to DeepState</Name>
         <CallbackMethod>sendtoDeepState</CallbackMethod>
             <ConfigUI>
@@ -16,13 +16,16 @@
 				   tooltip="Enter URL or Image path"
 				   default=""
                   >
-
 				<Label>Path or URL to use:</Label>
 			</Field>
         <Field id="sep3" type="separator"/>
     </ConfigUI>
     </Action>
+    <Action id="resetImageTimers" >
+        <Name>Reset Image Timers</Name>
+        <CallbackMethod>resetImageTimers</CallbackMethod>
 
+    </Action>
   
 </Actions>
 
