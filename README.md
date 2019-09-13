@@ -24,6 +24,9 @@ Setup
 Start DeepStack Server - recognition only API needed, pick port to run on 
 Plugin Defaults to 7183
 
+##### Plugin Needs Pillow installed/PIL for image control
+##### pip install pillow
+
 2. Install Plugin and setup with PluginConfig
 
 Enter the ipaddress of your DeepStateAI API
