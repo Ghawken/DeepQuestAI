@@ -36,7 +36,7 @@ Enable within BlueIris plugin, the Broadcast setting
 
 ## Plugin Config Settings:
 
-![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStatePluginConfig1.png](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStatePluginConfig1.png)
+![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStatePluginConfig1.png?raw=True](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStatePluginConfig1.png)
 
 IP Address:  IP address of computer where deepStackAI running, or localhost
 Port: Port of DeepStackAI service
@@ -56,7 +56,7 @@ DeepQuestAI will pull 5 images, 2 seconds apart one after another and send to De
 
 Obviously the number of cameras enabled, and speed of DeepStack will be very important here
 
-![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStatePluginConfig2.png](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStatePluginConfig2.png)
+![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStatePluginConfig2.png?raw=True](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStatePluginConfig2.png)
 
 
 Warning:
@@ -78,7 +78,7 @@ If Page refreshed (and simply action replace Controlpage with self) Will move on
 
 Actions - to Reset Images to Zero
 
-![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateImageServer.png](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateImageServer.png)
+![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateImageServer.png?raw=True](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateImageServer.png)
 
 
 
@@ -104,11 +104,11 @@ Then usual indigo conditions, action groups apply.
 eg.
 person found, do this etc.
 
-![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateTriggersObject.png](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateTriggersObject.png)
+![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateTriggersObject.png?raw=True](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateTriggersObject.png)
 
 
 
 ## Actions
 
-![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateActions.png](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateActions.png)
+![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateActions.png?raw=True](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateActions.png)
 
