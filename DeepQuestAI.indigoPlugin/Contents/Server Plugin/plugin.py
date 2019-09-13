@@ -897,7 +897,7 @@ class httpHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-type', mimetype)
                 self.end_headers()
                 listFiles = self.date_sortfiles(self.plugin.folderLocationCars+'DeepStateCarsFull*.jpg')
-                self.plugin.imageNoCar= self.plugin.imageNoCar+1
+
                 if self.plugin.imageNoCar > len(listFiles):
                     self.plugin.imageNoCar = 0
                 #self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
@@ -906,6 +906,7 @@ class httpHandler(BaseHTTPRequestHandler):
                 file = open(listFiles[self.plugin.imageNoCar], 'rb')
                 self.wfile.write(file.read())
                 file.close()
+                self.plugin.imageNoCar = self.plugin.imageNoCar + 1
 
             if self.path == "/carcrop.html":
                 self.send_response(200)
@@ -913,7 +914,7 @@ class httpHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-type', mimetype)
                 self.end_headers()
                 listFiles = self.date_sortfiles(self.plugin.folderLocationCars+'DeepStateCars_*.jpg')
-                self.plugin.imageNoCarCrop= self.plugin.imageNoCarCrop+1
+
                 if self.plugin.imageNoCarCrop > len(listFiles):
                     self.plugin.imageNoCarCrop = 0
                 #self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
@@ -922,6 +923,7 @@ class httpHandler(BaseHTTPRequestHandler):
                 file = open(listFiles[self.plugin.imageNoCarCrop], 'rb')
                 self.wfile.write(file.read())
                 file.close()
+                self.plugin.imageNoCarCrop = self.plugin.imageNoCarCrop + 1
 
             if self.path == "/personfull.html":
                 self.send_response(200)
@@ -929,7 +931,7 @@ class httpHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-type', mimetype)
                 self.end_headers()
                 listFiles = self.date_sortfiles(self.plugin.folderLocationFaces + 'DeepStateFacesFull*.jpg')
-                self.plugin.imageNoPerson = self.plugin.imageNoPerson + 1
+
                 if self.plugin.imageNoPerson > len(listFiles):
                     self.plugin.imageNoPerson = 0
                 # self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
@@ -938,6 +940,7 @@ class httpHandler(BaseHTTPRequestHandler):
                 file = open(listFiles[self.plugin.imageNoPerson], 'rb')
                 self.wfile.write(file.read())
                 file.close()
+                self.plugin.imageNoPerson = self.plugin.imageNoPerson + 1
 
             if self.path == "/personcrop.html":
                 self.send_response(200)
@@ -945,7 +948,7 @@ class httpHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-type', mimetype)
                 self.end_headers()
                 listFiles = self.date_sortfiles(self.plugin.folderLocationFaces + 'DeepStateFaces_*.jpg')
-                self.plugin.imageNoPersonCrop = self.plugin.imageNoPersonCrop + 1
+
                 if self.plugin.imageNoPersonCrop > len(listFiles):
                     self.plugin.imageNoPersonCrop = 0
                 # self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
@@ -954,7 +957,7 @@ class httpHandler(BaseHTTPRequestHandler):
                 file = open(listFiles[self.plugin.imageNoPersonCrop], 'rb')
                 self.wfile.write(file.read())
                 file.close()
-
+                self.plugin.imageNoPersonCrop = self.plugin.imageNoPersonCrop + 1
             return
 
         except self.plugin.StopThread:
