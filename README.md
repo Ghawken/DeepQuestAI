@@ -56,7 +56,7 @@ DeepQuestAI will pull 5 images, 2 seconds apart one after another and send to De
 
 Obviously the number of cameras enabled, and speed of DeepStack will be very important here
 
-![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStatePluginConfig2.png?raw=True](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStatePluginConfig2.png)
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStatePluginConfig2.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStatePluginConfig2.png)
 
 
 Warning:
@@ -73,6 +73,12 @@ Enable/Port used
 Then can go to
 
 http://192.168.1.19:4142/carfull.html
+http://192.168.1.19:4142/carcrop.html
+http://192.168.1.19:4142/personfull.html
+http://192.168.1.19:4142/personcrop.html
+
+(192.168.1.19 - is local Indigo IP address)
+
 As Refreshing URL within control page to show the last Car Image detected/Saved
 If Page refreshed (and simply action replace Controlpage with self) Will move on to next etc.etc.
 
