@@ -1,20 +1,28 @@
-Indigoplugin for DeepQuestAI
+# Indigoplugin for DeepQuestAI
 
 This is now the beginning of a plugin for DeepQuestAI or DeepStackAI 
 
 DeepQuestAI is an interesting local AI detection API AI engine.
-
 https://deepquestai.com/
 
-This plugin deeply ties in with BlueIris plugin (where new updated version is needed), it then uses indigo 7+ Broadcast ability to communicate between plugins.
+This plugin deeply ties in with BlueIris plugin (where new updated Plugin version is needed), it then uses indigo 7+ Broadcast ability to communicate between plugins.
 
 You need to install and setup DeepStackAI.
 Windows, Mac versons available - with local usage for current plugin requirements
-An API number is needed.
+An API number is needed, but can be freely installed.
+
+On my now growing testing works very well.
+Is all local, which is both positive and negative:
+Positive - have images to use and keep / Cars/ People saved forever if wanted
+         - No security issues
+         - Seems faster than off site options (like Sentry on BI)
+Negative - need CPU cycles to run the detection
 
 Setup
 
-1. Install DeepStack, run and activate with your API code
+1. Install DeepStack, run and activate with your API code on html website.  
+Start DeepStack Server - recognition only API needed, pick port to run on 
+Plugin Defaults to 7183
 
 2. Install Plugin and setup with PluginConfig
 
@@ -28,8 +36,8 @@ Enable within BlueIris plugin, the Broadcast setting
 
 ## Plugin Config Settings:
 
-DeepQuest API:  Not needed as yet
-Use local DeepQuestAI - will use 'localhost' for IP address if running locally
+![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStatePluginConfig1.png](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStatePluginConfig1.png)
+
 IP Address:  IP address of computer where deepStackAI running, or localhost
 Port: Port of DeepStackAI service
 Enabled Cameras:
@@ -48,8 +56,32 @@ DeepQuestAI will pull 5 images, 2 seconds apart one after another and send to De
 
 Obviously the number of cameras enabled, and speed of DeepStack will be very important here
 
+![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStatePluginConfig2.png](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStatePluginConfig2.png)
+
+
 Warning:
-Currently there are no checks on how far behind it might be getting...
+Currently checks and if 60 seconds behind image/checking will delete image and move on.
+Will add Plugin Setting for this shortly - but ideally want to make it related to velocity of change
+eg. if catching up continue, if getting longer and longer delete
+
+
+### Enabled HTTP Image Server
+
+This is the 2nd major functionality of plugin - runs a local web server to server Plugin Images to ControlPages
+Enable/Port used
+
+Then can go to
+
+http://192.168.1.19:4142/carfull.html
+As Refreshing URL within control page to show the last Car Image detected/Saved
+If Page refreshed (and simply action replace Controlpage with self) Will move on to next etc.etc.
+
+Actions - to Reset Images to Zero
+
+![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateImageServer.png](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateImageServer.png)
+
+
+
 
 ## Plugin:
 Has One Device
@@ -72,7 +104,11 @@ Then usual indigo conditions, action groups apply.
 eg.
 person found, do this etc.
 
+![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateTriggersObject.png](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateTriggersObject.png)
 
 
 
+## Actions
+
+![https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateActions.png](https://github.com/Ghawken/DeepQuest/blob/master/Images/DeepStateActions.png)
 
