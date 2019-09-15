@@ -75,8 +75,8 @@ class Plugin(indigo.PluginBase):
         self.logger.info(u"{0:<30} {1}".format("Indigo version:", indigo.server.version))
         self.logger.info(u"{0:<30} {1}".format("Python version:", sys.version.replace('\n', '')))
         self.logger.info(u"{0:<30} {1}".format("Python Directory:", sys.prefix.replace('\n', '')))
+
         self.logger.info(u"{0:<30} {1}".format("Major Problem equals: ", MajorProblem))
-        self.logger.info(u"{0:=^130}".format(""))
 
         # Change to logging
         pfmt = logging.Formatter('%(asctime)s.%(msecs)03d\t[%(levelname)8s] %(name)20s.%(funcName)-25s%(msg)s',
@@ -85,7 +85,13 @@ class Plugin(indigo.PluginBase):
 
         self.previoustimeDelay = 0
 
-        self.listenPort =4142
+        self.pathtoPlugin = os.getcwd()
+
+        self.pathtoNotFound = self.pathtoPlugin + '/Images/notfoundimage.jpg'
+
+        self.logger.info(u"{0:<30} {1}".format("Install Path :", self.pathtoPlugin.replace('\n', '')))
+
+        self.logger.info(u"{0:=^130}".format(""))
         self.logLevel = int(self.pluginPrefs.get(u"showDebugLevel",'5'))
         self.debugLevel = self.logLevel
         self.indigo_log_handler.setLevel(self.logLevel)
@@ -133,10 +139,13 @@ hair dryer, toothbrush'''
         self.deviceCamerastouse = self.pluginPrefs.get('deviceCamera','')
 
         # below for http server
-        self.imageNoCar = 0
-        self.imageNoCarCrop = 0
-        self.imageNoPerson = 0
-        self.imageNoPersonCrop = 0
+        self.HTMLimageNo = 0
+        self.HTMLlastObject = 'unknown'
+        self.HTMLlistFiles = []
+        #self.imageNoCar = 0
+        #self.imageNoCarCrop = 0
+        #self.imageNoPerson = 0
+        #self.imageNoPersonCrop = 0
 
 
         self.imageTimeout = 10
@@ -150,10 +159,31 @@ hair dryer, toothbrush'''
 
         self.next_update_check = t.time()
         MAChome = os.path.expanduser("~") + "/"
+
+        self.saveDirectory = self.pluginPrefs.get('directory', '')
+        # default below
         self.folderLocation = MAChome + "Documents/Indigo-DeepQuestAI/"
         self.folderLocationFaces = MAChome + "Documents/Indigo-DeepQuestAI/Faces/"
         self.folderLocationCars = MAChome + "Documents/Indigo-DeepQuestAI/Cars/"
-        self.folderLocationTemp = MAChome + "Documents/Indigo-DeepQuestAI/Temp/"
+        #self.folderLocationTemp = MAChome + "Documents/Indigo-DeepQuestAI/Temp/"
+
+        if self.saveDirectory == '':
+            self.saveDirectory = self.folderLocation
+            self.logger.debug(u'Self.SaveDirectory changed:'+self.saveDirectory)
+            self.pluginPrefs['directory'] = self.saveDirectory
+        try:
+            if not os.path.exists(self.saveDirectory):
+                os.makedirs(self.saveDirectory)
+        except:
+            self.logger.error(u'Error Accessing Save Directory.  Using Default:'+unicode(self.folderLocation))
+            self.saveDirectory = self.folderLocation
+            self.pluginPrefs['directory'] = self.saveDirectory
+            pass
+
+        self.folderLocationTemp = self.folderLocation + "Temp/"
+
+        if self.debug3:
+            self.logger.debug(u'Path to Image Not Found equals:'+self.pathtoNotFound)
 
         self.deviceNeedsUpdated = ''
 
@@ -218,6 +248,7 @@ hair dryer, toothbrush'''
             self.debug4 = valuesDict.get('debug4', False)
             self.debug5 = valuesDict.get('debug5', False)
 
+            self.saveDirectory = valuesDict.get('directory', '')
 
             self.indigo_log_handler.setLevel(self.logLevel)
             self.logger.debug(u"logLevel = " + str(self.logLevel))
@@ -268,10 +299,12 @@ hair dryer, toothbrush'''
                 self.sleep(1)
                 # below for http server
                 if t.time()>resetImages:
-                    self.imageNoCar = 0
-                    self.imageNoCarCrop = 0
-                    self.imageNoPerson = 0
-                    self.imageNoPersonCrop = 0
+                    self.HTMLimageNo = 0
+                    self.HTMLlistFiles = []
+                    #self.imageNoCar = 0
+                    #self.imageNoCarCrop = 0
+                    #self.imageNoPerson = 0
+                    #self.imageNoPersonCrop = 0
                     resetImages = t.time()+ 360
 
         except self.StopThread:
@@ -282,19 +315,40 @@ hair dryer, toothbrush'''
 
          self.debugLog(u"shutdown() method called.")
 
+    def createFolder(self,objectType):
+        if self.debug2:
+            self.logger.debug('Checking Directory for ObjectType')
+        if not os.path.exists(self.saveDirectory+'/'+objectType):
+            os.makedirs(self.saveDirectory+'/'+objectType)
+            if self.debug2:
+                self.logger.debug('Created directory for new Object Type:'+unicode(objectType))
+        return
+
     def startup(self):
 
         self.debugLog(u"Starting Plugin. startup() method called.")
-        if not os.path.exists(self.folderLocation):
-            os.makedirs(self.folderLocation)
-        if not os.path.exists(self.folderLocationFaces):
-            os.makedirs(self.folderLocationFaces)
-        if not os.path.exists(self.folderLocationCars):
-            os.makedirs(self.folderLocationCars)
+
+        if not os.path.exists(self.saveDirectory):
+            os.makedirs(self.saveDirectory)
+
+       # if not os.path.exists(self.folderLocationFaces):
+        #    os.makedirs(self.folderLocationFaces)
+
+      #  if not os.path.exists(self.folderLocationCars):
+      #      os.makedirs(self.folderLocationCars)
+
         if not os.path.exists(self.folderLocationTemp):
             os.makedirs(self.folderLocationTemp)
 
         self.deleteTempfiles()
+
+        for dev in indigo.devices.itervalues("self.DeepStateObject"):
+            if dev.enabled:
+                objectName = dev.pluginProps['objectType']
+                if objectName =='other':
+                    objectName = dev.pluginProps['objectOther']
+                self.logger.debug('Checking directory for ObjectType:' + unicode(objectName))
+                self.createFolder(objectName)
 
         indigo.server.subscribeToBroadcast(kBroadcasterPluginId, u"broadcasterStarted", u"broadcasterStarted")
         indigo.server.subscribeToBroadcast(kBroadcasterPluginId, u"broadcasterShutdown", u"broadcasterShutdown")
@@ -314,13 +368,68 @@ hair dryer, toothbrush'''
 
         self.debugLog(u"validatePrefsConfigUi() method called.")
 
-        error_msg_dict = indigo.Dict()
+        errorDict = indigo.Dict()
 
+        if valuesDict.get('directory', '') != '':
+            # check read/write access to directory
+            if os.access(valuesDict['directory'],os.W_OK) == False:
+                errorDict['directory']='No write Access to this location.'
+                errorDict['showAlertText']='Error.  Cannot write to this location'
+                self.logger.debug(u'DiskAccessError:  Cannot Read/Write to this location')
+                return (False, valuesDict, errorDict)
+            else:
+                self.logger.debug(u'DiskAcces:  All Good.  Can Read/Write to this location')
+        if valuesDict.get('directory','') == '':
+            MAChome = os.path.expanduser("~") + "/"
+            folderLocation = MAChome + "Documents/Indigo-DeepQuestAI/"
+            valuesDict['directory'] = folderLocation
+            self.pluginPrefs['directory'] = folderLocation
         # self.errorLog(u"Plugin configuration error: ")
 
         return True, valuesDict
 
+    def validateDeviceConfigUi(self, valuesDict, typeID, devId):
+        self.logger.debug(u'validateDeviceConfigUi Called')
+        errorDict = indigo.Dict()
 
+        try:
+            if typeID=='DeepStateObject':
+                if valuesDict['objectType']=='other':
+                    if valuesDict['objectOther'] not in self.alldeepstateclasses:
+                        errorDict['objectOther'] ='Objectname you have entered not within above examples'
+                        return (False, valuesDict, errorDict)
+
+                    self.logger.debug(u'Creating Save Folder for this Object Type:'+unicode(valuesDict['objectOther']) )
+                    self.createFolder(valuesDict['objectOther'])
+            return (True, valuesDict, errorDict)
+
+
+        except ValueError:
+            self.logger.debug(u'Error in Validate')
+            return (False, valuesDict, errorDict)
+        except:
+            self.logger.exception(u'Caught Error in Device Validate')
+            return (False, valuesDict, errorDict)
+
+    def validateEventConfigUi(self, valuesDict, typeID, devId):
+        self.logger.debug(u'validateEventConfigUi Called')
+        errorDict = indigo.Dict()
+
+        try:
+            if typeID=='objectFound':
+                if valuesDict['objectType']=='other':
+                    if valuesDict['objectOther'] not in self.alldeepstateclasses:
+                        errorDict['objectOther'] ='Objectname you have entered not within above examples'
+                        return (False, valuesDict, errorDict)
+
+            return (True, valuesDict, errorDict)
+
+        except ValueError:
+            self.logger.debug(u'Error in Validate')
+            return (False, valuesDict, errorDict)
+        except:
+            self.logger.exception(u'Caught Error in Event Validate')
+            return (False, valuesDict, errorDict)
 
     def setStatestonil(self, dev):
 
@@ -441,6 +550,18 @@ hair dryer, toothbrush'''
         self.logger.debug(u"New logLevel = " + str(self.logLevel))
         self.indigo_log_handler.setLevel(self.logLevel)
 
+        self.debug1 = True
+        self.debug2 = True
+        self.debug3 = True
+        self.debug4 = True
+        self.debug5 = True
+        self.pluginPrefs['debug1']= self.debug1
+        self.pluginPrefs['debug2'] = self.debug2
+        self.pluginPrefs['debug3'] = self.debug3
+        self.pluginPrefs['debug4'] = self.debug4
+        self.pluginPrefs['debug5'] = self.debug5
+
+
 ############ Broadcast Subscribe stuff
 
     def broadcasterStarted(self):
@@ -451,40 +572,61 @@ hair dryer, toothbrush'''
         self.logger.debug("received broadcasterShutdown message")
         return
 
-    def checkcars(self, liveurlphoto, ipaddress, cameraname, image, indigodeviceid, confidence, x_min,x_max,y_min,y_max, external):
+    def checkcars(self, liveurlphoto, ipaddress, cameraname, image, imagefresh, indigodeviceid, confidence, x_min,x_max,y_min,y_max, external):
         self.logger.debug('Now checking for Cars....')
         urltosend = 'http://' + ipaddress + ":7188/v1/vision/face"
         try:
-            cropped = image.crop((x_min, y_min, x_max, y_max))
+            cropped = imagefresh.crop((x_min, y_min, x_max, y_max))
             filename = self.folderLocationCars + "DeepStateCars_{}_{}.jpg".format(cameraname, str(t.time()))
             cropped.save(filename)
+            ## Save Full image here as well
+            image.save(self.folderLocationCars + "DeepStateCarsFull_{}_{}.jpg".format(cameraname, str(t.time())))
 
-            self.checkDevices(cropped, 'car', ipaddress, cameraname, image, filename, confidence)
+            self.checkDevices('car', cameraname, filename, confidence)
             self.triggerCheck('car', cameraname, indigodeviceid, 'objectTrigger', confidence, external)
         except Exception as ex:
             self.logger.debug('Error Saving to Vehicles: ' + unicode(ex))
 
-    def checkfaces2(self, liveurlphoto, ipaddress, cameraname, image, indigodeviceid, confidence, x_min,x_max,y_min,y_max, external):
+    def checkfaces2(self,  liveurlphoto, ipaddress, cameraname, image, indigodeviceid, confidence, x_min,x_max,y_min,y_max, external):
         self.logger.debug('Now checking for Faces 2/Cropping only....')
         urltosend = 'http://' + ipaddress + ":7188/v1/vision/face"
         try:
             cropped = image.crop((x_min, y_min, x_max, y_max))
             filename= self.folderLocationFaces + "DeepStateFaces_{}_{}.jpg".format(cameraname, str(t.time()))
             cropped.save(filename)
-
-            self.checkDevices(cropped, 'person', ipaddress, cameraname, image, filename, confidence)
+            self.checkDevices('person', cameraname, filename, confidence)
             self.triggerCheck('person', cameraname, indigodeviceid, 'objectTrigger', confidence, external)
 
         except Exception as ex:
             self.logger.debug('Error Saving to Vehicles: ' + unicode(ex))
 
-    def checkDevices(self, cropped, objectname, ipaddress, cameraname, image, filename, confidence):
-        self.logger.debug('CheckDevices run')
+    def checkallobjects(self, deepStateObject, liveurlphoto, ipaddress, cameraname, image, imagefresh, indigodeviceid, confidence, x_min,x_max,y_min,y_max, external):
 
+        self.logger.debug('Now checking for All Objects only: Checking against:'+unicode(deepStateObject))
+
+        try:
+            filenameCrop = self.saveDirectory+deepStateObject+'/' + 'DeepState_'+deepStateObject+'_Crop_{}_{}.jpg'.format(cameraname, str(t.time()))
+            filenameFull = self.saveDirectory+deepStateObject+'/' + 'DeepState_'+deepStateObject+'_Full_{}_{}.jpg'.format(cameraname, str(t.time()))
+            if self.checkDevices(deepStateObject, cameraname, filenameFull, confidence):
+                # only save images if a Device exists - still trigger though regardless
+                cropped = imagefresh.crop((x_min, y_min, x_max, y_max))
+                cropped.save(filenameCrop)
+                image.save(filenameFull)
+
+            self.triggerCheck(deepStateObject, cameraname, indigodeviceid, 'objectTrigger', confidence, external)
+
+        except Exception as ex:
+            self.logger.exception('Error Saving All Objects: ' + unicode(ex))
+
+    def checkDevices(self, objectname, cameraname, filename, confidence):
+
+        self.logger.debug('CheckDevices run')
         for dev in indigo.devices.itervalues("self.DeepStateObject"):
             if dev.enabled:
                 objectName = dev.pluginProps['objectType']
-                self.logger.debug('ObjectType:'+unicode(objectName))
+                if objectName =='other':
+                    objectName = dev.pluginProps['objectOther']
+                #self.logger.debug('Checking for ObjectType:' + unicode(objectName))
                 if objectName == objectname:
                     dev.updateStateOnServer('objectType', value=objectname)
                     dev.updateStateOnServer('cameraFound', value=cameraname)
@@ -494,6 +636,8 @@ hair dryer, toothbrush'''
                     dev.updateStateOnServer('timeLastFound', value=time)
                     dev.updateStateOnServer('confidence', value=confidence)
                     dev.updateStateOnServer('date', value=update_time)
+                    return True
+        return False
 
     def checkfaces(self, cropped, ipaddress, cameraname, image):
         self.logger.error('Now checking for Faces....')
@@ -554,7 +698,10 @@ hair dryer, toothbrush'''
 
                 # Change to List for all Cameras
                 if (trigger.pluginTypeId == 'objectFound'):
-                    if str(trigger.pluginProps['objectType'])== str(objectname):
+                    objectName = trigger.pluginProps['objectType']
+                    if objectName == 'other':
+                        objectName = trigger.pluginProps['objectOther']
+                    if str(objectName)== str(objectname):
                         triggerconfidence = trigger.pluginProps.get('confidence',0.6)
 
                         if str(indigodeviceid) in trigger.pluginProps['deviceCamera'] and float(confidence) >= float(triggerconfidence) or (external == True and float(confidence>=float(triggerconfidence))):
@@ -663,7 +810,7 @@ hair dryer, toothbrush'''
                     self.logger.debug(u'Thread:SendtoDeepState: Processing items now '+unicode(timedelay)+u' seconds later than image captured.')
 
                 if timedelay> int(self.timeLimit) and velocity > -5:  ## if more than 60 seconds delayed in processing images, skip current item and delete temp image
-                    self.logger.info(u'Thread:SendtoDeepstate:  Processing items now '+unicode(self.timeLimit)+u' seconds behind image capture, and velocity >5 positive.  Aborting this image until resolved.')
+                    self.logger.info(u'Thread:SendtoDeepstate:  Processing items now '+unicode(self.timeLimit)+u' seconds behind image capture, and velocity >-5 positive.  Aborting this image until resolved.')
                     if os.path.exists(path):
                         os.remove(path)
                     else:
@@ -720,19 +867,16 @@ hair dryer, toothbrush'''
                         draw.text((x_min + 5, y_min + 5), labelonbox, font=ImageFont.truetype(font='Arial.ttf', size=18),
                                   fill='red')
                         cropped = imagefresh.crop((x_min, y_min, x_max, y_max))
-                        if label == 'person':
-                            ## check for faces
-                            self.checkfaces2(cropped, ipaddress, cameraname, imagefresh, indigodeviceid, confidence, x_min, x_max, y_min, y_max, external)
-                            image.save(
-                                self.folderLocationFaces + "DeepStateFacesFull_{}_{}.jpg".format(cameraname, str(t.time())))
-                        if carfound:
-                            self.checkcars(cropped, ipaddress, cameraname, imagefresh, indigodeviceid, confidence,x_min, x_max,  y_min, y_max, external)
-                            image.save(       self.folderLocationCars + "DeepStateCarsFull_{}_{}.jpg".format(cameraname, str(t.time())))
-                            carfound = False
-
-                    if anyobjectfound:
-                        # image.save(self.folderLocation+"/DeepState_{}_{}.jpg".format(cameraname, label))
-                        anyobjectfound = False
+                        #if label == 'person':
+                            ## check for faces - disabled not really helpful
+                            ## change to check for every object possible.
+                            #self.checkfaces2(cropped, ipaddress, cameraname, imagefresh, indigodeviceid, confidence, x_min, x_max, y_min, y_max, external)
+                            #image.save(self.folderLocationFaces + "DeepStateFacesFull_{}_{}.jpg".format(cameraname, str(t.time())))
+                        #if carfound:
+                        self.checkallobjects(label, cropped,ipaddress,cameraname, image,imagefresh, indigodeviceid, confidence,x_min, x_max,  y_min, y_max, external)
+                            #self.checkcars(cropped, ipaddress, cameraname, image, imagefresh, indigodeviceid, confidence,x_min, x_max,  y_min, y_max, external)
+                            #image.save(self.folderLocationCars + "DeepStateCarsFull_{}_{}.jpg".format(cameraname, str(t.time())))
+                            #carfound = False
 
                 else:
                     self.logger.debug(u'Thread:SendtoDeepstate: DeepState Request failed:')
@@ -766,10 +910,12 @@ hair dryer, toothbrush'''
     ## Actions.xml
     def resetImageTimers(self, action):
         self.logger.debug(u"resetImageTimers Called as Action.")
-        self.imageNoCar = 0
-        self.imageNoCarCrop = 0
-        self.imageNoPerson = 0
-        self.imageNoPersonCrop = 0
+        self.HTMLimageNo = 0
+        self.HTMLlistFiles = []
+        #self.imageNoCar = 0
+        #self.imageNoCarCrop = 0
+        #self.imageNoPerson = 0
+        #self.imageNoPersonCrop = 0
 
         return
 
@@ -919,12 +1065,12 @@ class httpHandler(BaseHTTPRequestHandler):
     def __init__(self,plugin, *args):
         try:
             self.plugin=plugin
-        #self.imageNo = self.plugin.imageNo
-        #self.logger = logger
-            self.plugin.debugLog(u'New Http Handler thread:'+threading.currentThread().getName()+", total threads: "+str(threading.activeCount()))
+            if self.plugin.debug4:
+                self.plugin.debugLog(u'New Http Handler thread:'+threading.currentThread().getName()+", total threads: "+str(threading.activeCount()))
             BaseHTTPRequestHandler.__init__(self, *args)
         except Exception as ex:
-            self.plugin.logger.exception(u'httpHandler init caught Exception'+unicode(ex))
+            self.plugin.logger.debug(u'httpHandler init caught Exception'+unicode(ex))
+            pass
 
     def date_sortfiles(self,path):
         try:
@@ -935,84 +1081,65 @@ class httpHandler(BaseHTTPRequestHandler):
             return files
         except Exception as ex:
             self.plugin.logger.debug(u'Error in Data_SortFiles'+unicode(ex))
+            return ''
 
     def do_GET(self):
 
         try:
-            if self.path == "/carfull.html":
+
+            if self.plugin.debug4:
+                self.plugin.logger.debug(u'Html Server: do_get: self.path = '+unicode(self.path[1:-5]))
+
+            if self.path[1:-5] in self.plugin.alldeepstateclasses:
+            ## Okay so requested html path contains a DeepStateObject
+            ## Could either be full or Crop - although not sure much role of cropped files...
+            ## Just serve the Full File
+                objectName = self.path[1:-5] # get the named object/is checked above
+                if self.plugin.HTMLlastObject != objectName:
+                    # serving new image - reset the count
+                    # and re-read the image Directories!
+
+                    self.plugin.HTMLlastObject = objectName
+                    self.plugin.HTMLimageNo = 0
+                    if self.plugin.debug4:
+                        self.plugin.logger.debug('HTML: do_Get: New image Serving reset count, and re-reading directory')
+                    self.plugin.HTMLlistFiles = self.date_sortfiles(self.plugin.saveDirectory + objectName + '/' + 'DeepState_' + objectName + '_Full*.jpg')
+                else:
+                    if not self.plugin.HTMLlistFiles:
+                        # empty
+                        self.plugin.HTMLlistFiles = self.date_sortfiles(self.plugin.saveDirectory + objectName + '/' + 'DeepState_' + objectName + '_Full*.jpg')
+                if self.plugin.debug4:
+                    self.plugin.logger.debug(u'd_Get: Html ObjectName:'+unicode(objectName))
+                # ignore the full/crop bit
+                # just serve the full one
                 self.send_response(200)
                 mimetype = 'image/jpg'
                 self.send_header('Content-type', mimetype)
                 self.end_headers()
-                listFiles = self.date_sortfiles(self.plugin.folderLocationCars+'DeepStateCarsFull*.jpg')
 
-                if self.plugin.imageNoCar > len(listFiles):
-                    self.plugin.imageNoCar = 0
+
+                if self.plugin.HTMLimageNo >= len(self.plugin.HTMLlistFiles):
+                    self.plugin.HTMLimageNo = 0
                 #self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
-                self.plugin.logger.debug(u'self.plugin.imageNoCar ='+unicode(self.plugin.imageNoCar))
-                sendReply = False
-                file = open(listFiles[self.plugin.imageNoCar], 'rb')
-                self.wfile.write(file.read())
-                file.close()
-                self.plugin.imageNoCar = self.plugin.imageNoCar + 1
+                if self.plugin.debug4:
+                    self.plugin.logger.debug(u'self.plugin.imageNo =' + unicode(self.plugin.HTMLimageNo))
 
-            if self.path == "/carcrop.html":
-                self.send_response(200)
-                mimetype = 'image/jpg'
-                self.send_header('Content-type', mimetype)
-                self.end_headers()
-                listFiles = self.date_sortfiles(self.plugin.folderLocationCars+'DeepStateCars_*.jpg')
+                if self.plugin.HTMLlistFiles:
+                    file = open(self.plugin.HTMLlistFiles[self.plugin.HTMLimageNo], 'rb')
+                    self.wfile.write(file.read())
+                    file.close()
+                    self.plugin.HTMLimageNo = self.plugin.HTMLimageNo + 1
+                else:
+                    file = open(self.plugin.pathtoNotFound, 'rb')
+                    self.wfile.write(file.read())
+                    file.close()
 
-                if self.plugin.imageNoCarCrop > len(listFiles):
-                    self.plugin.imageNoCarCrop = 0
-                #self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
-                self.plugin.logger.debug(u'self.plugin.imageNoCarCrop ='+unicode(self.plugin.imageNoCarCrop))
-                sendReply = False
-                file = open(listFiles[self.plugin.imageNoCarCrop], 'rb')
-                self.wfile.write(file.read())
-                file.close()
-                self.plugin.imageNoCarCrop = self.plugin.imageNoCarCrop + 1
-
-            if self.path == "/personfull.html":
-                self.send_response(200)
-                mimetype = 'image/jpg'
-                self.send_header('Content-type', mimetype)
-                self.end_headers()
-                listFiles = self.date_sortfiles(self.plugin.folderLocationFaces + 'DeepStateFacesFull*.jpg')
-
-                if self.plugin.imageNoPerson > len(listFiles):
-                    self.plugin.imageNoPerson = 0
-                # self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
-                self.plugin.logger.debug(u'self.plugin.imageNoPerson =' + unicode(self.plugin.imageNoPerson))
-                sendReply = False
-                file = open(listFiles[self.plugin.imageNoPerson], 'rb')
-                self.wfile.write(file.read())
-                file.close()
-                self.plugin.imageNoPerson = self.plugin.imageNoPerson + 1
-
-            if self.path == "/personcrop.html":
-                self.send_response(200)
-                mimetype = 'image/jpg'
-                self.send_header('Content-type', mimetype)
-                self.end_headers()
-                listFiles = self.date_sortfiles(self.plugin.folderLocationFaces + 'DeepStateFaces_*.jpg')
-
-                if self.plugin.imageNoPersonCrop > len(listFiles):
-                    self.plugin.imageNoPersonCrop = 0
-                # self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
-                self.plugin.logger.debug(u'self.plugin.imageNoPersonCrop =' + unicode(self.plugin.imageNoPersonCrop))
-                sendReply = False
-                file = open(listFiles[self.plugin.imageNoPersonCrop], 'rb')
-                self.wfile.write(file.read())
-                file.close()
-                self.plugin.imageNoPersonCrop = self.plugin.imageNoPersonCrop + 1
             return
 
         except self.plugin.StopThread:
             self.logger.debug(u'Self.Stop Thread called')
             pass
-
         except IOError:
-            self.plugin.logger.exception()
+            self.plugin.logger.debug(u'IOError: Exception:')
         except Exception as ex:
-            self.plugin.logger.exception(u'Exception'+unicode(ex))
+            self.plugin.logger.debug(u'HTML Server: do_Get: Caught Exception'+unicode(ex))

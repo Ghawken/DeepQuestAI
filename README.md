@@ -73,22 +73,42 @@ eg. if catching up continue, if getting longer and longer delete
 This is the 2nd major functionality of plugin - runs a local web server to server Plugin Images to ControlPages
 Enable/Port used
 
-Then can go to
+Then can go to, any of the objectType name to display
 
-http://192.168.1.19:4142/carfull.html
-http://192.168.1.19:4142/carcrop.html
-http://192.168.1.19:4142/personfull.html
-http://192.168.1.19:4142/personcrop.html
+http://192.168.1.19:4142/car.html
+http://192.168.1.19:4142/person.html
+http://192.168.1.19:4142/bench.html
+etc..etc..
+
 
 (192.168.1.19 - is local Indigo IP address)
 
-As Refreshing URL within control page to show the last Car Image detected/Saved
-If Page refreshed (and simply action replace Controlpage with self) Will move on to next etc.etc.
+As Refreshing URL within control page to show the last Image detected/Saved
+If Page refreshed (and simply action replace Controlpage with self) Will move on to next image etc.etc.
 
 Actions - to Reset Images to Zero
 
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateImageServer.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateImageServer.png)
 
+
+## Images Saved
+
+Plugin saves all Images in users documents directory/Indigo-DeepQuestAI, or as selected with PluginConfig
+
+New:
+Will ONLY save images if a matching Indigo Device exists.
+
+eg: Indigo Device DeepState Object == Car
+Will save all images found of object = Car
+& vice versa
+
+Will trigger however, without any devices existing - just won't save images.
+
+
+Within Cars/Faces always saves a copy of the whole Image (with bounding red box and Confidence in top left)
+Also saves a cropped Copy of the Person/Car
+
+Will shortly add ability to date/move/keep images for as long as wanted.
 
 
 

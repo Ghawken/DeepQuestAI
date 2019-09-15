@@ -39,6 +39,22 @@
 
 				<Label>Enter your Port:</Label>
 			</Field>
+        <Field id="directory"
+				   type="textfield"
+				   tooltip="Enter Save Directory:"
+                    default = ''>
+				<Label>Enter Save Directory:</Label>
+	</Field>
+  <Field id="spacea2" type="label" fontSize="small" fontColor="black">
+    <Label>
+        The Directory for Archived Saved Images.
+        New Images will be saved to:
+        eg. /Users/Indigo/Documents/Indigo-DeepStateAI/
+        Plugin must have read and write access
+        Leave blank for Default - above + /Archive
+    </Label>
+  </Field>
+
             <Field id="appleAPIid"
 				   type="textfield"
 				   tooltip="Is this account active?"
