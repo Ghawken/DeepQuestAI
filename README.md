@@ -115,8 +115,11 @@ Will shortly add ability to date/move/keep images for as long as wanted.
 ## Plugin:
 Has One Device
 
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateDeviceOptions.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateDeviceOptions.png)
+
+
 DeepState Object Device:
-Choose between Vehicle and Person
+Choose between Vehicle and Person and Other - for everything else.
 Enter the desired confidence for this Object.
 When found the Device will be updated with details, including Image link
 
