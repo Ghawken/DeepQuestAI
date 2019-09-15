@@ -166,3 +166,4 @@ TODO
 - Add multiple similiar objects together as a list - eg.cat,dog, bear!
 (decide how to do that with Indigo config currently)
 - Return Car back to all vehicles (currently just car)
+- Add time of photo taken to image, not time processed
