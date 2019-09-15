@@ -144,3 +144,25 @@ person found, do this etc.
 
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateActions.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateActions.png)
 
+
+
+ChangeLog:
+
+Better late than Never
+
+0.2.6
+Remove Unselected Cameras from being an option with Events (confusing), Can set up multiple events for objects, from one many or different cameras.
+Just can't select a Camera which isn't enabled in Main Plugin Config
+
+0.2.5
+Add support for every every object available with DeepState - eg. cats, dogs etc.
+Extend this support to Html Image Server (now every objectType is possible)
+Extend this support to Devices and Events and Actions
+Important:
+Plugin will not save any images for any object, unless there is a corresponding device with that Object type within Indigo
+eg. if want to save every Car image - need to create a Indigo Car device, etc for every object
+
+TODO
+- Add multiple similiar objects together as a list - eg.cat,dog, bear!
+(decide how to do that with Indigo config currently)
+- Return Car back to all vehicles (currently just car)

@@ -421,7 +421,8 @@ hair dryer, toothbrush'''
                     if valuesDict['objectOther'] not in self.alldeepstateclasses:
                         errorDict['objectOther'] ='Objectname you have entered not within above examples'
                         return (False, valuesDict, errorDict)
-
+            if self.debug5:
+                self.logger.debug(u'Event Dict:'+unicode(valuesDict))
             return (True, valuesDict, errorDict)
 
         except ValueError:
@@ -507,6 +508,26 @@ hair dryer, toothbrush'''
                 # elif os.path.isdir(file_path): shutil.rmtree(file_path)
             except Exception as e:
                 self.logger.exception(e)
+
+    def EventreturnCameras(self,filter='', valuesDict=None, typeId='', targetId=0):
+        self.logger.debug(u'Generate Cameras Lists for Event')
+        myArray = []
+        if self.debug5:
+            self.logger.debug(u'self.deviceCamerstouse:' + unicode(self.deviceCamerastouse))
+        for dev in indigo.devices.itervalues("com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"):
+
+            if dev.enabled:
+                if self.debug5:
+                    self.logger.debug(u'Checking dev.id:'+unicode(dev.id)+' and device name:'+unicode(dev.name))
+                if str(dev.id) in self.deviceCamerastouse:
+                    if self.debug5:
+                        self.logger.debug(u'Update Camera: Add to List:'+unicode(dev.id))
+                    myArray.append((dev.id,dev.name))
+        if self.debug5:
+            self.logger.debug(unicode(myArray))
+        return myArray
+
+
 
     def toggleDebugEnabled(self):
         """ Toggle debug on/off. """

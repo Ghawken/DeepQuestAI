@@ -2,7 +2,7 @@
 <Events>
   <SupportURL></SupportURL>
     <Event id="objectFound">
-        <Name>Trigger with Object Dection</Name>
+        <Name>Trigger with Object Detection</Name>
         <ConfigUI>
         <Field id="objectType" type="menu">
             <Label>Object Type :</Label>
@@ -45,8 +45,11 @@
 			</Field>
          <Field id="deviceCamera" type="list" rows="14">
                 <Label>From Camera(s)</Label>
-                <List class="indigo.devices" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"/>
+
+             <List class="self" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera" method="EventreturnCameras"/>
          </Field>
+
+
             <Field id="dontretrigger"
 				   type="textfield"
 				   tooltip="Dont retrigger within this many seconds"
