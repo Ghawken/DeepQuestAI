@@ -148,11 +148,20 @@ person found, do this etc.
 
 ChangeLog:
 
-Better late than Never
+Better late than Never!
 
-0.2.7
+0.3.0
 Add check for Temp Files in directory, before delete
-Use RAMdisk for temp files add setting
+Use RAMdisk for temp files add setting:
+    Creates a 256MB Ram disk to use for all Temporary Files - downloading from BI
+    If drive full just skips and typically means > 200 files behind so not great
+    Ejects/Closes/Creates if and when needed
+    If PluginConfig changes will force restart of Plugin to create RamDisk
+    Further checks/balances for RAMdisk creation
+    
+With BI Plugin 1.1.15: Sends BlueIris Trigger Type
+Ignores AUDIO triggers (yah!) as this was causing a lot of activity for me particularly when windy
+[Add selection of particular triggers perhaps later]
 
 0.2.6
 Remove Unselected Cameras from being an option with Events (confusing), Can set up multiple events for objects, from one many or different cameras.

@@ -68,6 +68,9 @@ class Plugin(indigo.PluginBase):
         self.startingUp = True
         self.pluginIsInitializing = True
         self.pluginIsShuttingDown = False
+
+        self.pluginneedsrestart = False
+
         self.prefsUpdated = False
         self.logger.info(u"")
         self.logger.info(u"{0:=^130}".format(" Initializing New Plugin Session "))
@@ -257,10 +260,10 @@ hair dryer, toothbrush'''
             self.superCharge = valuesDict.get('superCharge', False)
 
             if valuesDict.get('useRAMdisk',False) == False and self.useRAMdisk:
-                pluginneedsrestart = True
+                self.pluginneedsrestart = True
                 ## if enabling Ramdisk need to restart
             if valuesDict.get('useRAMdisk', False) == True and self.useRAMdisk == False:
-                pluginneedsrestart = True
+                self.pluginneedsrestart = True
 
             self.useRAMdisk = valuesDict.get('useRAMdisk',False)
 
@@ -325,7 +328,7 @@ hair dryer, toothbrush'''
 
         try:
             resetImages = t.time()+360
-
+            restartPluginCheck = t.time() +10
             while True:
 
                 self.sleep(1)
@@ -334,6 +337,11 @@ hair dryer, toothbrush'''
                     self.HTMLimageNo = 0
                     self.HTMLlistFiles = []
                     resetImages = t.time()+ 360
+
+                if t.time()>restartPluginCheck and self.pluginneedsrestart:
+                    self.ejectRAMdisk()
+                    self.sleep(5)
+                    self.restartPlugin()
 
         except self.StopThread:
             self.debugLog(u'Restarting/or error. Stopping Main thread.')
@@ -357,17 +365,25 @@ hair dryer, toothbrush'''
     def ejectRAMdisk(self):
 
         try:
-            self.logger.debug(u'Plugin closing Ejecting RAMdisk')
-            subprocess.check_output(['/usr/sbin/diskutil', 'eject', self.RAMdevice] )
+            self.logger.debug(u'Plugin closing & Ejecting RAMdisk')
+            if os.path.exists('/Volumes/DeepStateTemp'):
+                subprocess.check_output(['/usr/sbin/diskutil', 'eject', self.RAMdevice] )
 
-        except:
-            self.logger.exception(u'Caught exception Ramdisk:')
-
+        except Exception as ex:
+            self.logger.debug(u'Caught exception Ramdisk:'+unicode(ex))
+            pass
 
 
     def createRAMdisk(self):
 
         self.logger.debug(u'Okay doing best to create a RAMDISK for Temporary file usage: 256MB used')
+        self.logger.debug(u'First ejecting disk incase still exists')
+        self.ejectRAMdisk()
+        self.sleep(2)
+
+        if os.path.exists('/Volumes/DeepStateTemp'):
+            self.logger.info(u'Difficult ejecting RamDISK.  Please eject manually and restart plugin')
+
         if self.debug3:
             self.logger.debug(u'Current Temp File location:'+self.folderLocationTemp)
         name = 'DeepStateTemp'
