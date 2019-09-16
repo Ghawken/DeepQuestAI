@@ -359,7 +359,7 @@ hair dryer, toothbrush'''
         try:
             self.logger.debug(u'Plugin closing Ejecting RAMdisk')
             subprocess.check_output(['/usr/sbin/diskutil', 'eject', self.RAMdevice] )
-            self.sleep(5)
+
         except:
             self.logger.exception(u'Caught exception Ramdisk:')
 
