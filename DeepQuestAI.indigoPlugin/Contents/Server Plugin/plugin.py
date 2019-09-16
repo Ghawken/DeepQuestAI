@@ -881,6 +881,9 @@ hair dryer, toothbrush'''
             self.logger.debug(u'connectServer has a Connection Error and cannot connect to BI Server.')
             self.sleep(5)
             pass
+        except IOError as ex:
+            self.logger.debug(u'threadDownloadImage has an IO Error:'+unicode(ex))
+            pass
 
         except:
             self.logger.exception(u'Caught Exception in threadDownloadImage')
@@ -1092,6 +1095,7 @@ hair dryer, toothbrush'''
             updatetime = arg[3]
             newimagedownloaded = arg[4]
             indigodeviceid = arg[5]
+            typetrigger = arg[6]
 
             if str(indigodeviceid) not in self.deviceCamerastouse:
                 if self.debug1:
@@ -1099,6 +1103,11 @@ hair dryer, toothbrush'''
                 #self.logger.debug(unicode(self.deviceCamerastouse))
                 return
 
+            if typetrigger == 'AUDIO':
+                if self.debug1:
+                    self.logger.debug('AUDIO Trigger Settings/Ignored.')
+                #self.logger.debug(unicode(self.deviceCamerastouse))
+                return
             motionTrue = threading.Thread(target=self.threadaddtoQue, args=[urlphoto, cameraname,indigodeviceid, False])
             motionTrue.start()
             # given delayed images over 10 seconds or even longer need to thread below
