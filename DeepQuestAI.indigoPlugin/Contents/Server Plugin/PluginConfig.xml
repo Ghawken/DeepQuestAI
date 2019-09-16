@@ -26,17 +26,14 @@
             <Field id="ipaddress"
 				   type="textfield"
 				   tooltip="Enter ipaddress or localhost checkbox"
-				   default=""
-                   >
+				   default=""                   >
 
 				<Label>Enter your Ip Address of DeepState Service:</Label>
 			</Field>
             <Field id="port"
 				   type="textfield"
 				   tooltip="Enter Port of DeepState Service"
-				   default="7188"
-                   >
-
+				   default="7188"                   >
 				<Label>Enter your Port:</Label>
 			</Field>
         <Field id="directory"
@@ -54,7 +51,28 @@
         Leave blank for Default - above + /Archive
     </Label>
   </Field>
+         <Field id="useRAMdisk" type="checkbox" tooltip="Create and use a 256MB Ram disk for all Temp files" Default="false">
+        <Label>Use RamDisk</Label>
+        <Description>Enable</Description>
+             </Field>
 
+    <Field id="tempdirectory"
+				   type="textfield"
+				   tooltip="Enter Temp Directory:"
+                    default = ''
+                     >
+				<Label>Enter Temp Directory:</Label>
+	</Field>
+  <Field id="spaceab2" type="label" fontSize="small" fontColor="black" >
+    <Label>
+        The Directory for Temp Files -
+        NB: Contents are deleted at Startup, so don't use a shared folder.
+
+        If using RAMdisk above leave this blank, but will show current Temp Path regardless
+
+    </Label>
+
+  </Field>
             <Field id="appleAPIid"
 				   type="textfield"
 				   tooltip="Is this account active?"

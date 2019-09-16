@@ -150,6 +150,10 @@ ChangeLog:
 
 Better late than Never
 
+0.2.7
+Add check for Temp Files in directory, before delete
+Use RAMdisk for temp files add setting
+
 0.2.6
 Remove Unselected Cameras from being an option with Events (confusing), Can set up multiple events for objects, from one many or different cameras.
 Just can't select a Camera which isn't enabled in Main Plugin Config

@@ -23,8 +23,10 @@ from shutil import copyfile
 
 from PIL import Image,ImageDraw,ImageFont
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-from SocketServer import ThreadingMixIn
-from os import curdir, sep
+#from SocketServer import ThreadingMixIn
+#from os import curdir, sep
+import subprocess
+import plistlib
 
 import glob
 
@@ -125,6 +127,9 @@ hair dryer, toothbrush'''
         self.useLocal = self.pluginPrefs.get('useLocal', False)
         self.ipaddress = self.pluginPrefs.get('ipaddress', False)
         self.superCharge = self.pluginPrefs.get('superCharge', False)
+
+        self.useRAMdisk = self.pluginPrefs.get('useRAMdisk',False)
+
         self.confidenceMain = self.pluginPrefs.get('confidenceMain', 0.7)
         self.imageScale = self.pluginPrefs.get('imageScale', 100)
         self.superChargedelay = self.pluginPrefs.get('superChargedelay', 2)
@@ -148,6 +153,9 @@ hair dryer, toothbrush'''
         #self.imageNoPersonCrop = 0
 
 
+        self.RAMdevice =''
+        self.RAMpath = ''
+
         self.imageTimeout = 10
         self.serverTimeout = 5
         self.debug1 = self.pluginPrefs.get('debug1', False)
@@ -161,10 +169,11 @@ hair dryer, toothbrush'''
         MAChome = os.path.expanduser("~") + "/"
 
         self.saveDirectory = self.pluginPrefs.get('directory', '')
+        self.tempDirectory = self.pluginPrefs.get('tempdirectory','')
         # default below
         self.folderLocation = MAChome + "Documents/Indigo-DeepQuestAI/"
-        self.folderLocationFaces = MAChome + "Documents/Indigo-DeepQuestAI/Faces/"
-        self.folderLocationCars = MAChome + "Documents/Indigo-DeepQuestAI/Cars/"
+        #self.folderLocationFaces = MAChome + "Documents/Indigo-DeepQuestAI/Faces/"
+        #self.folderLocationCars = MAChome + "Documents/Indigo-DeepQuestAI/Cars/"
         #self.folderLocationTemp = MAChome + "Documents/Indigo-DeepQuestAI/Temp/"
 
         if self.saveDirectory == '':
@@ -180,7 +189,21 @@ hair dryer, toothbrush'''
             self.pluginPrefs['directory'] = self.saveDirectory
             pass
 
-        self.folderLocationTemp = self.folderLocation + "Temp/"
+        if self.tempDirectory == '':
+            self.tempDirectory = self.folderLocation +'Temp/'
+            self.logger.debug(u'Self.tempDirectory changed:'+self.tempDirectory)
+            self.pluginPrefs['tempdirectory'] = self.tempDirectory
+        try:
+            if self.useRAMdisk == False:
+                if not os.path.exists(self.tempDirectory):
+                    os.makedirs(self.tempDirectory)
+        except:
+            self.logger.error(u'Error Accessing Temp Directory.  Using Default:'+unicode(self.folderLocation))
+            self.tempDirectory = self.folderLocation + 'Temp/'
+            self.pluginPrefs['tempdirectory'] = self.tempDirectory
+            pass
+
+        self.folderLocationTemp = self.tempDirectory
 
         if self.debug3:
             self.logger.debug(u'Path to Image Not Found equals:'+self.pathtoNotFound)
@@ -222,6 +245,9 @@ hair dryer, toothbrush'''
             self.debugLog(u"User prefs dialog cancelled.")
 
         if not userCancelled:
+
+            pluginneedsrestart = False
+
             self.debugLevel = valuesDict.get('showDebugLevel', "10")
             self.debugLog(u"User prefs saved.")
             self.API = valuesDict.get('API','')
@@ -229,6 +255,15 @@ hair dryer, toothbrush'''
             self.useLocal = valuesDict.get('useLocal', False)
             self.ipaddress = valuesDict.get('ipaddress', False)
             self.superCharge = valuesDict.get('superCharge', False)
+
+            if valuesDict.get('useRAMdisk',False) == False and self.useRAMdisk:
+                pluginneedsrestart = True
+                ## if enabling Ramdisk need to restart
+            if valuesDict.get('useRAMdisk', False) == True and self.useRAMdisk == False:
+                pluginneedsrestart = True
+
+            self.useRAMdisk = valuesDict.get('useRAMdisk',False)
+
             self.confidenceMain = valuesDict.get('confidenceMain', 0.7)
             self.imageScale = valuesDict.get('imageScale', 100)
             self.superChargeimageno = valuesDict.get('superChargeimageno', 3)
@@ -249,11 +284,15 @@ hair dryer, toothbrush'''
             self.debug5 = valuesDict.get('debug5', False)
 
             self.saveDirectory = valuesDict.get('directory', '')
+            self.tempDirectory = valuesDict.get('tempdirectory','')
 
             self.indigo_log_handler.setLevel(self.logLevel)
             self.logger.debug(u"logLevel = " + str(self.logLevel))
             self.logger.debug(u"User prefs saved.")
             self.logger.debug(u"Debugging on (Level: {0})".format(self.debugLevel))
+
+            #if pluginneedsrestart:
+                #self.restartPlugin()
 
         self.logger.debug(unicode(valuesDict))
         return True
@@ -289,31 +328,22 @@ hair dryer, toothbrush'''
 
             while True:
 
-
-                #self.debugLog(u" ")
-
-                #for dev in indigo.devices.itervalues('self'):
-
-                 #   self.debugLog(u"MainLoop:  {0}:".format(dev.name))
-
                 self.sleep(1)
                 # below for http server
                 if t.time()>resetImages:
                     self.HTMLimageNo = 0
                     self.HTMLlistFiles = []
-                    #self.imageNoCar = 0
-                    #self.imageNoCarCrop = 0
-                    #self.imageNoPerson = 0
-                    #self.imageNoPersonCrop = 0
                     resetImages = t.time()+ 360
 
         except self.StopThread:
             self.debugLog(u'Restarting/or error. Stopping Main thread.')
+            self.ejectRAMdisk()
             pass
 
     def shutdown(self):
 
-         self.debugLog(u"shutdown() method called.")
+        self.debugLog(u"shutdown() method called.")
+
 
     def createFolder(self,objectType):
         if self.debug2:
@@ -323,6 +353,58 @@ hair dryer, toothbrush'''
             if self.debug2:
                 self.logger.debug('Created directory for new Object Type:'+unicode(objectType))
         return
+
+    def ejectRAMdisk(self):
+
+        try:
+            self.logger.debug(u'Plugin closing Ejecting RAMdisk')
+            subprocess.check_output(['/usr/sbin/diskutil', 'eject', self.RAMdevice] )
+            self.sleep(5)
+        except:
+            self.logger.exception(u'Caught exception Ramdisk:')
+
+
+
+    def createRAMdisk(self):
+
+        self.logger.debug(u'Okay doing best to create a RAMDISK for Temporary file usage: 256MB used')
+        if self.debug3:
+            self.logger.debug(u'Current Temp File location:'+self.folderLocationTemp)
+        name = 'DeepStateTemp'
+        size =524288   # 256 MB RAM drive
+
+        self.RAMdevice = subprocess.check_output(
+            ['/usr/bin/hdiutil', 'attach', '-nomount', 'ram://%i' % (size )]
+        ).strip()
+        subprocess.check_output(
+            ['/usr/sbin/diskutil', 'erasevolume', 'hfsx', name, self.RAMdevice]
+        )
+
+        self.logger.debug(u'createRAMdisk:  self.RAMdevice:'+unicode(self.RAMdevice))
+
+
+        self.RAMpath = plistlib.readPlistFromString(
+            subprocess.check_output(
+                ['/usr/sbin/diskutil', 'info', '-plist', self.RAMdevice]
+            )
+        )['MountPoint']
+
+        self.logger.debug(u'createRAMdisk: self.RAMpath:' + unicode(self.RAMpath))
+
+        self.sleep(15)  # give time to finish creation of RAMDisk
+
+        self.tempDirectory = self.RAMpath + '/Temp/'
+        self.folderLocationTemp = self.tempDirectory
+        self.pluginPrefs['tempdirectory'] = self.tempDirectory
+        if self.debug3:
+            self.logger.debug(u'Current Temp File Now location:'+self.folderLocationTemp)
+
+    def restartPlugin(self):
+
+        self.logger.debug(u'Restarting Plugin')
+        plugin = indigo.server.getPlugin("com.GlennNZ.indigoplugin.DeepQuestAI")
+        if plugin.isEnabled():
+            plugin.restart()
 
     def startup(self):
 
@@ -336,6 +418,8 @@ hair dryer, toothbrush'''
 
       #  if not os.path.exists(self.folderLocationCars):
       #      os.makedirs(self.folderLocationCars)
+        if self.useRAMdisk:
+            self.createRAMdisk()
 
         if not os.path.exists(self.folderLocationTemp):
             os.makedirs(self.folderLocationTemp)
@@ -501,13 +585,14 @@ hair dryer, toothbrush'''
     def deleteTempfiles(self):
         self.logger.debug(u'Deleting temp files if any.')
         for the_file in os.listdir(self.folderLocationTemp):
-            file_path = os.path.join(self.folderLocationTemp, the_file)
-            try:
-                if os.path.isfile(file_path):
-                    os.unlink(file_path)
+            if the_file.startswith('TempFile_'):
+                file_path = os.path.join(self.folderLocationTemp, the_file)
+                try:
+                    if os.path.isfile(file_path):
+                        os.unlink(file_path)
                 # elif os.path.isdir(file_path): shutil.rmtree(file_path)
-            except Exception as e:
-                self.logger.exception(e)
+                except Exception as e:
+                    self.logger.exception(e)
 
     def EventreturnCameras(self,filter='', valuesDict=None, typeId='', targetId=0):
         self.logger.debug(u'Generate Cameras Lists for Event')
