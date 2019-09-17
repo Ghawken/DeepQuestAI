@@ -1,5 +1,48 @@
 <?xml version="1.0"?>
 <Devices>
+ <Device type="custom" id="DeepStateService" >
+     <Name>DeepState Main Service</Name>
+     <States>
+             <State id="ipaddress">
+                <ValueType>String</ValueType>
+                <TriggerLabel>IP Address Service</TriggerLabel>
+                <ControlPageLabel>IP Address</ControlPageLabel>
+            </State>
+            <State id="timeLastrun">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Time last Run</TriggerLabel>
+                <ControlPageLabel>Time last Run</ControlPageLabel>
+             </State>
+             <State id="deviceIsOnline">
+                <ValueType>Boolean</ValueType>
+                <TriggerLabel>Device is online</TriggerLabel>
+                <ControlPageLabel>Device is Online</ControlPageLabel>
+            </State>
+            <State id="imagesProcessed">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Images Processed</TriggerLabel>
+                <ControlPageLabel>Images Processed</ControlPageLabel>
+            </State>
+            <State id="imagesSkipped">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>images Skipped</TriggerLabel>
+                <ControlPageLabel>images Skipped/Aborted</ControlPageLabel>
+            </State>
+            <State id="currentQue">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Images currently Qued</TriggerLabel>
+                <ControlPageLabel>Images Currrently Qued</ControlPageLabel>
+            </State>
+                     <State id="currentDelay">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Delay Seconds Images currently Behind</TriggerLabel>
+                <ControlPageLabel>Delay Seconds Images Currrently Behind</ControlPageLabel>
+            </State>
+        </States>
+    <UiDisplayStateId>deviceIsOnline</UiDisplayStateId>
+ </Device>
+
+
  <Device type="custom" id="DeepStateObject" >
         <Name>DeepState Object</Name>
     <ConfigUI>

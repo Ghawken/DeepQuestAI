@@ -80,7 +80,16 @@
                    hidden ='True'>
 				<Label>Apple Account ID:</Label>
 			</Field>
+      <Field id="sep224" type="separator"/>
 
+      <Field id="generateMain"
+				   type="button"
+				   tooltip="Click on this button to Generate Main Device"
+                  >
+				<Label>Generate Main Device</Label>
+				<Title>Generate Main Device</Title>
+				<CallbackMethod>generateMain</CallbackMethod>
+	</Field>
 <Field id="sep49" type="separator"/>
             <Field id="deviceCamera" type="list" rows="14">
                 <Label>Enabled Camera(s)</Label>

@@ -150,6 +150,11 @@ ChangeLog:
 
 Better late than Never!
 
+0.3.1
+Add Main Server Device - created with pluginConfig
+Allows monitoring of DeepState service, images, delay etc. Found was constantly looking for this info
+Force ejects RAM disk
+
 0.3.0
 Add check for Temp Files in directory, before delete
 Use RAMdisk for temp files add setting:

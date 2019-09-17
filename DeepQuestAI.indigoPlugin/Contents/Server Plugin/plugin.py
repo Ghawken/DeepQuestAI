@@ -167,6 +167,10 @@ hair dryer, toothbrush'''
         self.debug4 = self.pluginPrefs.get('debug4',False)
         self.debug5 = self.pluginPrefs.get('debug5', False)
 
+        self.mainSkippedImages = 0
+        self.mainProcessedImages = 0
+        self.mainTimeLastRun = ''
+
 
         self.next_update_check = t.time()
         MAChome = os.path.expanduser("~") + "/"
@@ -299,13 +303,60 @@ hair dryer, toothbrush'''
 
         self.logger.debug(unicode(valuesDict))
         return True
+    def generateMain(self,valuesDict):
+
+        self.logger.debug(u'generateMain Devices Called.')
+        deviceName = 'DeepState Main Service'
+        FoundDevice = False
+        for dev in indigo.devices.itervalues('self.DeepStateService'):
+            FoundDevice = True
+
+        if FoundDevice == False:
+            self.logger.info(u'No matching Main Device Found - creating one:')
+            self.logger.info(unicode(deviceName) + '  created Device')
+            device = indigo.device.create(address=deviceName, deviceTypeId='DeepStateService', name=deviceName,
+                                      protocol=indigo.kProtocol.Plugin, folder='DeepState AI')
+            self.sleep(1)
+            stateList = [
+                {'key': 'deviceIsOnline', 'value': True, 'uiValue': 'Online'},
+                {'key': 'imagesSkipped', 'value': self.mainSkippedImages},
+                {'key': 'imagesProcessed', 'value': self.mainProcessedImages},
+                {'key': 'ipaddress', 'value': self.ipaddress},
+                {'key': 'timeLastrun', 'value': self.mainTimeLastRun},
+                {'key': 'currentQue', 'value': self.quesize},
+                {'key': 'currentDelay', 'value': self.previoustimeDelay}
+            ]
+            device.updateStatesOnServer(stateList)
+            #device.updateStateOnServer('deviceIsOnline', value=True, uiValue="Online")
+
 
     # Start 'em up.
     def deviceStartComm(self, dev):
 
-         self.debugLog(u"deviceStartComm() method called.")
+        self.debugLog(u"deviceStartComm() method called.")
+        dev.stateListOrDisplayStateIdChanged()
 
-         dev.stateListOrDisplayStateIdChanged()
+        if dev.deviceTypeId == 'DeepStateObject':
+            if dev.enabled:
+                objectName = dev.pluginProps['objectType']
+                if objectName =='other':
+                    objectName = dev.pluginProps['objectOther']
+                self.logger.debug('Checking directory for ObjectType:' + unicode(objectName))
+                self.createFolder(objectName)
+
+        if dev.deviceTypeId== "DeepStateService":
+            #self.logger.error(unicode(dev))
+            if dev.enabled:
+                stateList = [
+                    {'key': 'deviceIsOnline', 'value': True},
+                    {'key': 'imagesSkipped', 'value': self.mainSkippedImages},
+                    {'key': 'imagesProcessed', 'value': self.mainProcessedImages},
+                    {'key': 'ipaddress', 'value': self.ipaddress},
+                    {'key': 'timeLastrun', 'value': self.mainTimeLastRun},
+                    {'key': 'currentQue', 'value': self.quesize},
+                    {'key': 'currentDelay', 'value': self.previoustimeDelay}
+                ]
+                dev.updateStatesOnServer(stateList)
 
     # Shut 'em down.
     def deviceStopComm(self, dev):
@@ -313,15 +364,7 @@ hair dryer, toothbrush'''
         self.debugLog(u"deviceStopComm() method called.")
         indigo.server.log(u"Stopping device: " + dev.name)
 
-    def forceUpdate(self):
-        self.updater.update(currentVersion='0.0.0')
 
-    def checkForUpdates(self):
-        if self.updater.checkForUpdate() == False:
-            indigo.server.log(u"No Updates are Available")
-
-    def updatePlugin(self):
-        self.updater.update()
 
     def runConcurrentThread(self):
 
@@ -329,19 +372,24 @@ hair dryer, toothbrush'''
         try:
             resetImages = t.time()+360
             restartPluginCheck = t.time() +10
+            mainDeviceupdate = t.time() +60
             while True:
 
                 self.sleep(1)
                 # below for http server
                 if t.time()>resetImages:
-                    self.HTMLimageNo = 0
                     self.HTMLlistFiles = []
+                    self.HTMLimageNo = 0
                     resetImages = t.time()+ 360
 
                 if t.time()>restartPluginCheck and self.pluginneedsrestart:
                     self.ejectRAMdisk()
                     self.sleep(5)
                     self.restartPlugin()
+
+                if t.time()>mainDeviceupdate:
+                    self.refreshMainDevice()
+                    mainDeviceupdate = t.time()+60
 
         except self.StopThread:
             self.debugLog(u'Restarting/or error. Stopping Main thread.')
@@ -367,7 +415,7 @@ hair dryer, toothbrush'''
         try:
             self.logger.debug(u'Plugin closing & Ejecting RAMdisk')
             if os.path.exists('/Volumes/DeepStateTemp'):
-                subprocess.check_output(['/usr/sbin/diskutil', 'eject', self.RAMdevice] )
+                subprocess.check_output(['/usr/sbin/diskutil', 'unmountdisk','force', self.RAMdevice] )
 
         except Exception as ex:
             self.logger.debug(u'Caught exception Ramdisk:'+unicode(ex))
@@ -396,7 +444,7 @@ hair dryer, toothbrush'''
             ['/usr/sbin/diskutil', 'erasevolume', 'hfsx', name, self.RAMdevice]
         )
 
-        self.logger.debug(u'createRAMdisk:  self.RAMdevice:'+unicode(self.RAMdevice))
+        self.logger.debug(u'createRAMdisk  :  self.RAMdevice:'+unicode(self.RAMdevice))
 
 
         self.RAMpath = plistlib.readPlistFromString(
@@ -405,10 +453,11 @@ hair dryer, toothbrush'''
             )
         )['MountPoint']
 
-        self.logger.debug(u'createRAMdisk: self.RAMpath:' + unicode(self.RAMpath))
+        self.logger.debug(u'createRAMdisk  : self.RAMpath:' + unicode(self.RAMpath))
 
-        self.sleep(15)  # give time to finish creation of RAMDisk
-
+        self.logger.info(u'Please Wait 10 seconds before opening config Dialogs...')
+        self.sleep(10)  # give time to finish creation of RAMDisk
+        self.logger.info(u'Please continue.')
         self.tempDirectory = self.RAMpath + '/Temp/'
         self.folderLocationTemp = self.tempDirectory
         self.pluginPrefs['tempdirectory'] = self.tempDirectory
@@ -441,14 +490,6 @@ hair dryer, toothbrush'''
             os.makedirs(self.folderLocationTemp)
 
         self.deleteTempfiles()
-
-        for dev in indigo.devices.itervalues("self.DeepStateObject"):
-            if dev.enabled:
-                objectName = dev.pluginProps['objectType']
-                if objectName =='other':
-                    objectName = dev.pluginProps['objectOther']
-                self.logger.debug('Checking directory for ObjectType:' + unicode(objectName))
-                self.createFolder(objectName)
 
         indigo.server.subscribeToBroadcast(kBroadcasterPluginId, u"broadcasterStarted", u"broadcasterStarted")
         indigo.server.subscribeToBroadcast(kBroadcasterPluginId, u"broadcasterShutdown", u"broadcasterShutdown")
@@ -501,6 +542,7 @@ hair dryer, toothbrush'''
 
                     self.logger.debug(u'Creating Save Folder for this Object Type:'+unicode(valuesDict['objectOther']) )
                     self.createFolder(valuesDict['objectOther'])
+
             return (True, valuesDict, errorDict)
 
 
@@ -532,40 +574,22 @@ hair dryer, toothbrush'''
             self.logger.exception(u'Caught Error in Event Validate')
             return (False, valuesDict, errorDict)
 
-    def setStatestonil(self, dev):
-
-         self.debugLog(u'setStates to nil run')
 
 
-    def refreshDataAction(self, valuesDict):
-        """
-        The refreshDataAction() method refreshes data for all devices based on
-        a plugin menu call.
-        """
 
-        self.debugLog(u"refreshDataAction() method called.")
-        self.refreshData()
-        return True
-
-    def refreshData(self):
+    def refreshMainDevice(self):
         """
         The refreshData() method controls the updating of all plugin
         devices.
         """
 
-        self.debugLog(u"refreshData() method called.")
+        self.debugLog(u"refreshMainDevice() method called.")
 
         try:
             # Check to see if there have been any devices created.
-            if indigo.devices.itervalues(filter="self"):
-
-                self.debugLog(u"Updating data...")
-
-                for dev in indigo.devices.itervalues(filter="self"):
+            for dev in indigo.devices.itervalues(filter="self"):
+                if dev.deviceTypeId == 'DeepStateService':
                     self.refreshDataForDev(dev)
-
-            else:
-                indigo.server.log(u"No Client devices have been created.")
 
             return True
 
@@ -579,8 +603,21 @@ hair dryer, toothbrush'''
         if dev.configured:
             self.debugLog(u"Found configured device: {0}".format(dev.name))
         if dev.enabled:
-            self.debugLog(u"   {0} is enabled.".format(dev.name))
-            timeDifference = int(t.time() - t.mktime(dev.lastChanged.timetuple()))
+            #currentque = int(self.que.qsize())
+            #timeDifference = int(t.time() - t.mktime(dev.lastChanged.timetuple()))
+            stateList = [
+                    {'key': 'deviceIsOnline', 'value': True},
+                    {'key': 'imagesSkipped', 'value': self.mainSkippedImages},
+                    {'key': 'imagesProcessed', 'value': self.mainProcessedImages},
+                    {'key': 'ipaddress', 'value': self.ipaddress},
+                    {'key': 'timeLastrun', 'value': self.mainTimeLastRun},
+                    {'key': 'currentQue', 'value': self.quesize},
+                    {'key': 'currentDelay', 'value': self.previoustimeDelay}
+                ]
+            dev.updateStatesOnServer(stateList)
+
+
+
         else:
             self.debugLog(u"    Disabled: {0}".format(dev.name))
 
@@ -936,6 +973,7 @@ hair dryer, toothbrush'''
 
                 if timedelay> int(self.timeLimit) and velocity > -5:  ## if more than 60 seconds delayed in processing images, skip current item and delete temp image
                     self.logger.info(u'Thread:SendtoDeepstate:  Processing items now '+unicode(self.timeLimit)+u' seconds behind image capture, and velocity >-5 positive.  Aborting this image until resolved.')
+                    self.mainSkippedImages = self.mainSkippedImages +1
                     if os.path.exists(path):
                         os.remove(path)
                     else:
@@ -960,12 +998,15 @@ hair dryer, toothbrush'''
 
                 self.reply = True
                 response = requests.post(urltosend, files={"image": liveurlphoto}, timeout=30).json()
-                self.logger.debug(unicode(response))
+                if self.debug1:
+                    self.logger.debug(unicode(response))
                 #self.listCameras[cameraname] = False  # set to false as already run.
 
                 vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train']
                 anyobjectfound = False
                 if response['success'] == True:
+                    self.mainProcessedImages = self.mainProcessedImages +1
+                    self.mainTimeLastRun = t.strftime('%c')
                     for object in response["predictions"]:
                         carfound = False
                         label = object["label"]
