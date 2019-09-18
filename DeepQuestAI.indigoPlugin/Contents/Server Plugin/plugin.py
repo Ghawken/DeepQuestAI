@@ -374,7 +374,7 @@ hair dryer, toothbrush'''
             resetImages = t.time()+360
             restartPluginCheck = t.time() +10
             mainDeviceupdate = t.time() +60
-            checkTempfiles = t.time() + 60*60
+            checkTempfiles = t.time() + 60 *60
             while True:
 
                 self.sleep(1)
