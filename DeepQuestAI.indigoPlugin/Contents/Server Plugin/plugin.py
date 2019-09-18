@@ -53,12 +53,13 @@ kDefaultPluginPrefs = {
 }
 
 class deepstateitem:
-    def __init__(self, path, indigodeviceid, cameraname, utctime, external):
+    def __init__(self, path, indigodeviceid, cameraname, utctime, external, superchargeImage):
         self.path = path
         self.indigodeviceid = indigodeviceid
         self.cameraname = cameraname
         self.utctime = utctime
         self.external = external
+        self.superchargeImage = superchargeImage
 
 class Plugin(indigo.PluginBase):
 
@@ -123,12 +124,12 @@ hair dryer, toothbrush'''
 
         self.reply = False
         self.triggers = {}
-
+        self.deepstateIssue = False
         self.triggersTriggered = {}
 
         self.API = self.pluginPrefs.get('API', False)
         self.useLocal = self.pluginPrefs.get('useLocal', False)
-        self.ipaddress = self.pluginPrefs.get('ipaddress', False)
+        self.ipaddress = self.pluginPrefs.get('ipaddress', '')
         self.superCharge = self.pluginPrefs.get('superCharge', False)
 
         self.useRAMdisk = self.pluginPrefs.get('useRAMdisk',False)
@@ -260,7 +261,7 @@ hair dryer, toothbrush'''
             self.API = valuesDict.get('API','')
             #self.logger.error(unicode(valuesDict))
             self.useLocal = valuesDict.get('useLocal', False)
-            self.ipaddress = valuesDict.get('ipaddress', False)
+            self.ipaddress = valuesDict.get('ipaddress', '')
             self.superCharge = valuesDict.get('superCharge', False)
 
             if valuesDict.get('useRAMdisk',False) == False and self.useRAMdisk:
@@ -373,6 +374,7 @@ hair dryer, toothbrush'''
             resetImages = t.time()+360
             restartPluginCheck = t.time() +10
             mainDeviceupdate = t.time() +60
+            checkTempfiles = t.time() + 60*60
             while True:
 
                 self.sleep(1)
@@ -390,6 +392,10 @@ hair dryer, toothbrush'''
                 if t.time()>mainDeviceupdate:
                     self.refreshMainDevice()
                     mainDeviceupdate = t.time()+60
+
+                if t.time()>checkTempfiles:
+                    self.checkqueandDelete()
+                    checkTempfiles = t.time()+ 60*60
 
         except self.StopThread:
             self.debugLog(u'Restarting/or error. Stopping Main thread.')
@@ -575,6 +581,12 @@ hair dryer, toothbrush'''
             return (False, valuesDict, errorDict)
 
 
+    def checkqueandDelete(self):
+        self.logger.debug(u'Checking for left over Temp files..')
+        if self.quesize == 0:
+            self.logger.debug(u'Que is empty, so deleting all Temp files...')
+            self.deleteTempfiles()
+
 
 
     def refreshMainDevice(self):
@@ -605,8 +617,9 @@ hair dryer, toothbrush'''
         if dev.enabled:
             #currentque = int(self.que.qsize())
             #timeDifference = int(t.time() - t.mktime(dev.lastChanged.timetuple()))
+            online = not self.deepstateIssue
             stateList = [
-                    {'key': 'deviceIsOnline', 'value': True},
+                    {'key': 'deviceIsOnline', 'value': online},
                     {'key': 'imagesSkipped', 'value': self.mainSkippedImages},
                     {'key': 'imagesProcessed', 'value': self.mainProcessedImages},
                     {'key': 'ipaddress', 'value': self.ipaddress},
@@ -942,20 +955,20 @@ hair dryer, toothbrush'''
             self.logger.exception(u'Caught Exception in threadDownloadImage')
 
     def threadSendtodeepstate(self):
+
         while True:
+
+            item = self.que.get()   # blocks here until another que items
+            ## blocks here until next item
+            cameraname= item.cameraname
+            indigodeviceid = item.indigodeviceid
+            path = item.path
+            utctime = item.utctime
+            external = item.external
+            superchargeImage =item.superchargeImage
+            timedelay = float(t.time())-float(utctime)
+            pasttimedelay = self.previoustimeDelay
             try:
-                item = self.que.get()   # blocks here until another que items
-                ## blocks here until next item
-
-                cameraname= item.cameraname
-                indigodeviceid = item.indigodeviceid
-                path = item.path
-                utctime = item.utctime
-                external = item.external
-
-                timedelay = float(t.time())-float(utctime)
-                pasttimedelay = self.previoustimeDelay
-
                 ## add velocity setting as well
                 velocity = timedelay - pasttimedelay
                 if self.debug2:
@@ -971,16 +984,28 @@ hair dryer, toothbrush'''
                     self.logger.debug(u'Thread:SendtoDeepstate: Processing next item in que: Cameraname:'+unicode(cameraname)+', image file:'+unicode(path)+', from IndigoID:'+unicode(indigodeviceid))
                     self.logger.debug(u'Thread:SendtoDeepState: Processing items now '+unicode(timedelay)+u' seconds later than image captured.')
 
+                if timedelay > int(self.timeLimit)/2:
+                    # if already halfway to limit start deleting the supercharged files
+                    if superchargeImage:
+                        self.logger.info(u'Deepstate Processing slowing down, skipping this SuperCharged Image')
+                        self.mainSkippedImages = self.mainSkippedImages + 1
+                        try:
+                            os.remove(path)
+                        except Exception as ex:
+                            self.logger.debug(u'Caught Issue Deleting File:' + ex)
+                        self.que.task_done()
+                        self.quesize = int(self.que.qsize())
+                        continue
+
                 if timedelay> int(self.timeLimit) and velocity > -5:  ## if more than 60 seconds delayed in processing images, skip current item and delete temp image
                     self.logger.info(u'Thread:SendtoDeepstate:  Processing items now '+unicode(self.timeLimit)+u' seconds behind image capture, and velocity >-5 positive.  Aborting this image until resolved.')
                     self.mainSkippedImages = self.mainSkippedImages +1
-                    if os.path.exists(path):
+                    try:
                         os.remove(path)
-                    else:
-                        self.logger.error(
-                            u"Thread:SendtoDeepstate: Error: deleting temporary file: it appears the file does not exist.  Path:" + unicode(
-                                path))
+                    except Exception as ex:
+                        self.logger.debug(u'Caught Issue Deleting File:' + ex)
                     self.que.task_done()
+                    self.quesize = int(self.que.qsize())
                     continue
 
                 if self.useLocal:
@@ -997,7 +1022,7 @@ hair dryer, toothbrush'''
                 imagefresh = Image.open(path)
 
                 self.reply = True
-                response = requests.post(urltosend, files={"image": liveurlphoto}, timeout=30).json()
+                response = requests.post(urltosend, files={"image": liveurlphoto}, timeout=15).json()
                 if self.debug1:
                     self.logger.debug(unicode(response))
                 #self.listCameras[cameraname] = False  # set to false as already run.
@@ -1007,6 +1032,7 @@ hair dryer, toothbrush'''
                 if response['success'] == True:
                     self.mainProcessedImages = self.mainProcessedImages +1
                     self.mainTimeLastRun = t.strftime('%c')
+                    self.deepstateIssue = False
                     for object in response["predictions"]:
                         carfound = False
                         label = object["label"]
@@ -1046,33 +1072,65 @@ hair dryer, toothbrush'''
 
                 else:
                     self.logger.debug(u'Thread:SendtoDeepstate: DeepState Request failed:')
+                    self.deepstateIssue = True
 
                 self.que.task_done()
-                if os.path.exists(path):
+                self.quesize = int(self.que.qsize())
+                try:
                     os.remove(path)
-                else:
-                    self.logger.error(u"Thread:SendtoDeepstate: Error: deleting temporary file: it appears the file does not exist.  Path:"+unicode(path))
+                except Exception as ex:
+                    self.logger.debug(u'Error deleting file'+unicode(ex))
 
             except self.StopThread:
                 self.logger.debug(u'Self.Stop Thread called')
+                self.deepstateIssue = True
                 pass
 
-            except requests.exceptions.Timeout:
-                self.logger.debug(u'threadaddtoQue has timed out and cannot connect to DeepStateAI')
+            except requests.exceptions.Timeout as ex:
+                self.logger.debug(u'threadaddtoQue has timed out and cannot connect to DeepStateAI:'+unicode(ex))
+                self.deepstateIssue = True
+                try:
+                    os.remove(path)
+                except Exception as ex:
+                    self.logger.debug(u'Caught Issue Deleting File:' + ex)
+                self.que.task_done()
+                self.quesize = int(self.que.qsize())
                 pass
 
             except requests.exceptions.ConnectionError:
                 self.logger.debug(u'Threadaddtoque has a Connection Error and cannot connect to DeepStateAI.')
+                self.deepstateIssue = True
+                try:
+                    os.remove(path)
+                except Exception as ex:
+                    self.logger.debug(u'Caught Issue Deleting File:' + ex)
+                self.que.task_done()
+                self.quesize = int(self.que.qsize())
                 self.sleep(1)
                 pass
 
             except IOError as ex:
                 self.logger.debug(u'Thread:SendtoDeepstate: IO Error: Probably file failed downloading...'+unicode(ex))
+                self.deepstateIssue = True
+                try:
+                    os.remove(path)
+                except Exception as ex:
+                    self.logger.debug(u'Caught Issue Deleting File:' + ex)
+                self.que.task_done()
+                self.quesize = int(self.que.qsize())
                 pass
 
             except Exception as ex:
                 self.logger.exception(u'Thread:SendtoDeepstate:Error sending to Deepstate: ' + unicode(ex))
+                self.deepstateIssue = True
+                try:
+                    os.remove(path)
+                except Exception as ex:
+                    self.logger.debug(u'Caught Issue Deleting File:' + ex)
+                self.que.task_done()
+                self.quesize = int(self.que.qsize())
                 self.reply = False
+
     ## Actions.xml
     def resetImageTimers(self, action):
         self.logger.debug(u"resetImageTimers Called as Action.")
@@ -1131,7 +1189,7 @@ hair dryer, toothbrush'''
                 path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
                 copyfile(imageLocation,path)
                 ## create a temporary file from the one given - otherwise will be deleted
-                item = deepstateitem(path, 1, 'ExternalActionFile', t.time(), True)
+                item = deepstateitem(path, 1, 'ExternalActionFile', t.time(), True, False)
                 if self.debug1:
                     self.logger.debug(u'Putting item into DeepState Que: Item:' + unicode(item))
                 self.que.put(item)
@@ -1176,28 +1234,46 @@ hair dryer, toothbrush'''
     def threadaddtoQue(self, urlphoto,cameraname,indigodeviceid, external):
         if self.debug3:
             self.logger.debug(u'Thread:AdddtoQue called.' + u' & Number of Active Threads:' + unicode(
-                threading.activeCount()))
+                threading.activeCount())+ u' and current que:'+unicode(self.quesize))
+        if int(self.quesize)==0:
+            self.deepstateIssue = False
+            ## if nothing in que set to False
+
+        if self.deepstateIssue:
+            self.logger.error(u'Issue with DeepState Service:  Not adding anything to que. Aborted.')
+
+            return
+
         try:
             if self.superCharge == False or external==True:
                 path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
                 ImageThread = threading.Thread(target=self.threadDownloadImage, args=[path, urlphoto])
                 ImageThread.start()
                 self.sleep(0.5)
-                item = deepstateitem(path, indigodeviceid, cameraname, t.time(),external )
+                item = deepstateitem(path, indigodeviceid, cameraname, t.time(),external , False)
                 if self.debug1:
                     self.logger.debug(u'Putting item into DeepState Que: Item:'+unicode(item))
                 self.que.put(item)
             else:
+                ## Add first image, as not supercharge, add rest
                 numberofseconds = range( int(self.superChargeimageno) )  #seconds here changed usage to number of images
+                path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
+                ImageThread = threading.Thread(target=self.threadDownloadImage, args=[path, urlphoto])
+                ImageThread.start()
+                self.sleep(0.3)
+                item = deepstateitem(path, indigodeviceid, cameraname, t.time(), external, False)
+                self.que.put(item)
+                if self.debug1:
+                    self.logger.debug(u'Putting SuperCharge.1 item into DeepState Que: Item:' + unicode(item))
                 for n in numberofseconds:
                     self.logger.debug(u'************** Downloading Images:  Image:'+unicode(n) +u' for Camera:'+unicode(cameraname) )
                     path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
-                    ImageThread = threading.Thread(target=self.threadDownloadImage,
+                    ImageThread2 = threading.Thread(target=self.threadDownloadImage,
                                                args=[path, urlphoto])
-                    ImageThread.start()
+                    ImageThread2.start()
                     self.sleep(float(self.superChargedelay))
                     #self.sleep(0.5)#sleep for the delay
-                    item = deepstateitem(path, indigodeviceid, cameraname, t.time(),external)
+                    item = deepstateitem(path, indigodeviceid, cameraname, t.time(),external, True)
                     if self.debug1:
                         self.logger.debug(u'Putting item into DeepState Que: Item.Path:'+unicode(item.path))
                     self.que.put(item)
