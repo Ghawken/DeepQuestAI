@@ -1111,7 +1111,7 @@ hair dryer, toothbrush'''
 
             except IOError as ex:
                 self.logger.debug(u'Thread:SendtoDeepstate: IO Error: Probably file failed downloading...'+unicode(ex))
-                self.deepstateIssue = True
+                # try not issue self.deepstateIssue = True
                 try:
                     os.remove(path)
                 except Exception as ex:
