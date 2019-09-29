@@ -1208,7 +1208,7 @@ hair dryer, toothbrush'''
     ##
 
     def motionTrue(self, arg):
-        i#f self.debug3:
+        #i#f self.debug3:
             #self.logger.debug(u"received Camera motionTrue message: %s" % (arg) )
         try:
             urlphoto = arg[0]+'?s='+str(self.imageScale)
