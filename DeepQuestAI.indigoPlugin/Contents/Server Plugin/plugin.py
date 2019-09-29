@@ -163,7 +163,7 @@ hair dryer, toothbrush'''
         self.RAMpath = ''
 
         self.imageTimeout = 10
-        self.serverTimeout = 5
+        self.serverTimeout = 7
         self.debug1 = self.pluginPrefs.get('debug1', False)
         self.debug2 = self.pluginPrefs.get('debug2', False)
         self.debug3 = self.pluginPrefs.get('debug3', False)
@@ -939,6 +939,22 @@ hair dryer, toothbrush'''
                         self.logger.debug(u'Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
              else:
                  self.logger.debug(u'Issue Downloading Image. Failed.')
+                 self.logger.debug(u'Requests: status code:'+unicode(r.status_code)+ u' try one more time..')
+                 self.sleep(1)
+                 start = t.time()
+                 r2 = requests.get(url, stream=True, timeout=self.serverTimeout)
+                 if r2.status_code == 200:
+                     # self.logger.debug(u'Yah Code 200....')
+                     with open(path, 'wb') as f:
+                        for chunk in r2.iter_content(1024):
+                            f.write(chunk)
+                            if t.time()>(start +self.imageTimeout):
+                                self.logger.error(u'Download Image Taking too long.  Aborted.  ?Network issue')
+                                break
+                        if self.debug2:
+                            self.logger.debug(u'2nd Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
+                 else:
+                     self.logger.exeception(u'2nd attempt fakied.')
 
 
         except requests.exceptions.Timeout:
