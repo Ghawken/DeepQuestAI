@@ -1115,7 +1115,7 @@ hair dryer, toothbrush'''
                 try:
                     os.remove(path)
                 except Exception as ex:
-                    self.logger.debug(u'Caught Issue Deleting File:' + ex)
+                    self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
                 self.que.task_done()
                 self.quesize = int(self.que.qsize())
                 pass
@@ -1126,7 +1126,7 @@ hair dryer, toothbrush'''
                 try:
                     os.remove(path)
                 except Exception as ex:
-                    self.logger.debug(u'Caught Issue Deleting File:' + ex)
+                    self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
                 self.que.task_done()
                 self.quesize = int(self.que.qsize())
                 self.sleep(1)
@@ -1138,7 +1138,7 @@ hair dryer, toothbrush'''
                 try:
                     os.remove(path)
                 except Exception as ex:
-                    self.logger.debug(u'Caught Issue Deleting File:' + ex)
+                    self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
                 self.que.task_done()
                 self.quesize = int(self.que.qsize())
                 pass
@@ -1149,7 +1149,8 @@ hair dryer, toothbrush'''
                 try:
                     os.remove(path)
                 except Exception as ex:
-                    self.logger.debug(u'Caught Issue Deleting File:' + ex)
+                    self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
+                    pass
                 self.que.task_done()
                 self.quesize = int(self.que.qsize())
                 self.reply = False
@@ -1236,8 +1237,8 @@ hair dryer, toothbrush'''
             typetrigger = arg[6]
 
             if str(indigodeviceid) not in self.deviceCamerastouse:
-                if self.debug1:
-                    self.logger.debug('Camera not enabled within DeepState Config Settings/Ignored.')
+                #if self.debug1:
+                    #self.logger.debug('Camera not enabled within DeepState Config Settings/Ignored.')
                 #self.logger.debug(unicode(self.deviceCamerastouse))
                 return
 
