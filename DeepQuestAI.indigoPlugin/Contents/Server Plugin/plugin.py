@@ -93,6 +93,8 @@ class Plugin(indigo.PluginBase):
 
         self.pathtoPlugin = os.getcwd()
 
+        self.deepstatetimeouts =0
+
         self.pathtoNotFound = self.pathtoPlugin + '/Images/notfoundimage.jpg'
 
         self.logger.info(u"{0:<30} {1}".format("Install Path :", self.pathtoPlugin.replace('\n', '')))
@@ -1033,6 +1035,7 @@ hair dryer, toothbrush'''
                     self.mainProcessedImages = self.mainProcessedImages +1
                     self.mainTimeLastRun = t.strftime('%c')
                     self.deepstateIssue = False
+                    self.deepstatetimeouts = 0
                     for object in response["predictions"]:
                         carfound = False
                         label = object["label"]
@@ -1088,7 +1091,11 @@ hair dryer, toothbrush'''
 
             except requests.exceptions.Timeout as ex:
                 self.logger.debug(u'threadaddtoQue has timed out and cannot connect to DeepStateAI:'+unicode(ex))
-                self.deepstateIssue = True
+
+                self.deepstatetimeouts = self.deepstatetimeouts + 1
+                if self.deepstatetimeouts >= 5:
+                    self.logger.debug(u'Timeouts greateer than 5. setting Issue')
+                    self.deepstateIssue = True
                 try:
                     os.remove(path)
                 except Exception as ex:
@@ -1111,7 +1118,7 @@ hair dryer, toothbrush'''
 
             except IOError as ex:
                 self.logger.debug(u'Thread:SendtoDeepstate: IO Error: Probably file failed downloading...'+unicode(ex))
-                # try not issue self.deepstateIssue = True
+                self.deepstateIssue = True
                 try:
                     os.remove(path)
                 except Exception as ex:
@@ -1201,8 +1208,8 @@ hair dryer, toothbrush'''
     ##
 
     def motionTrue(self, arg):
-        if self.debug3:
-            self.logger.debug(u"received Camera motionTrue message: %s" % (arg) )
+        i#f self.debug3:
+            #self.logger.debug(u"received Camera motionTrue message: %s" % (arg) )
         try:
             urlphoto = arg[0]+'?s='+str(self.imageScale)
             cameraname = arg[1]
