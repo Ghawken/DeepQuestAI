@@ -909,8 +909,6 @@ hair dryer, toothbrush'''
                                         self.logger.debug(u'Trigger :'+ unicode(trigger.name) + u' not run again, as current time='+unicode(t.time())+u' and time past run='+unicode(self.triggersTriggered[trigger.id]))
                                     # add requesting running and continue
 
-
-
                 elif self.debug2:
                     self.logger.debug(
                         "Not Run Trigger Type %s (%d), %s" % (trigger.name, trigger.id, trigger.pluginTypeId))
@@ -974,6 +972,8 @@ hair dryer, toothbrush'''
 
     def threadSendtodeepstate(self):
 
+        alreadysuperchargeSkip = False
+
         while True:
 
             item = self.que.get()   # blocks here until another que items
@@ -986,6 +986,7 @@ hair dryer, toothbrush'''
             superchargeImage =item.superchargeImage
             timedelay = float(t.time())-float(utctime)
             pasttimedelay = self.previoustimeDelay
+
             try:
                 ## add velocity setting as well
                 velocity = timedelay - pasttimedelay
@@ -1003,14 +1004,17 @@ hair dryer, toothbrush'''
                     self.logger.debug(u'Thread:SendtoDeepState: Processing items now '+unicode(timedelay)+u' seconds later than image captured.')
 
                 if timedelay > int(self.timeLimit)/2:
+                    if alreadysuperchargeSkip:
+                        alreadysuperchargeSkip = False
                     # if already halfway to limit start deleting the supercharged files
-                    if superchargeImage:
-                        self.logger.info(u'Deepstate Processing slowing down, skipping this SuperCharged Image')
+                    else:
+                        self.logger.info(u'Deepstate Processing slowing down, skipping ever 2nd SuperCharged Image')
                         self.mainSkippedImages = self.mainSkippedImages + 1
+                        alreadysuperchargeSkip = True
                         try:
                             os.remove(path)
                         except Exception as ex:
-                            self.logger.debug(u'Caught Issue Deleting File:' + ex)
+                            self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
                         self.que.task_done()
                         self.quesize = int(self.que.qsize())
                         continue
@@ -1021,7 +1025,7 @@ hair dryer, toothbrush'''
                     try:
                         os.remove(path)
                     except Exception as ex:
-                        self.logger.debug(u'Caught Issue Deleting File:' + ex)
+                        self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
                     self.que.task_done()
                     self.quesize = int(self.que.qsize())
                     continue
@@ -1032,8 +1036,23 @@ hair dryer, toothbrush'''
                     ipaddress = self.ipaddress
 
                 urltosend = 'http://' + ipaddress + ":" + self.port + "/v1/vision/detection"
-                if self.debug1:
-                    self.logger.debug(urltosend)
+                if self.debug3:
+                    self.logger.debug(u'Now Validing Image Data before sending..')
+
+                if not self.imageVerify(path):
+                    self.logger.debug(u'Image Failed Verification.  Skipped.')
+                    self.mainSkippedImages = self.mainSkippedImages + 1
+                    try:
+                        os.remove(path)
+                    except Exception as ex:
+                        self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
+                    self.que.task_done()
+                    self.quesize = int(self.que.qsize())
+                    continue
+
+                if self.debug3:
+                    self.logger.debug(u'Sending to :'+unicode(urltosend))
+
 
                 liveurlphoto = open(path, 'rb').read()
                 image = Image.open(path)
@@ -1110,7 +1129,7 @@ hair dryer, toothbrush'''
 
                 self.deepstatetimeouts = self.deepstatetimeouts + 1
                 if self.deepstatetimeouts >= 5:
-                    self.logger.debug(u'Timeouts greateer than 5. setting Issue')
+                    self.logger.debug(u'Timeouts greater than 5. setting Issue')
                     self.deepstateIssue = True
                 try:
                     os.remove(path)
@@ -1154,6 +1173,21 @@ hair dryer, toothbrush'''
                 self.que.task_done()
                 self.quesize = int(self.que.qsize())
                 self.reply = False
+
+    def imageVerify(self, path):
+        if self.debug4:
+            self.logger.debug(u'imageVerify called for image Path:'+unicode(path))
+        try:
+            img = Image.open(path)
+            img.verify()
+            return True
+        except Exception as ex:
+            if self.debug3:
+                self.logger.debug(u'Exception: Image Verification Failed:'+unicode(ex))
+            return False
+
+
+
 
     ## Actions.xml
     def resetImageTimers(self, action):
@@ -1278,6 +1312,8 @@ hair dryer, toothbrush'''
                 if self.debug1:
                     self.logger.debug(u'Putting item into DeepState Que: Item:'+unicode(item))
                 self.que.put(item)
+
+
             else:
                 ## Add first image, as not supercharge, add rest
                 numberofseconds = range( int(self.superChargeimageno) )  #seconds here changed usage to number of images

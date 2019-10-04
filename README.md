@@ -150,6 +150,11 @@ ChangeLog:
 
 Better late than Never!
 
+0.3.8
+Verify image data before sending to DeepState (having some issues with invalid image data crashing deepstate)
+Few unicode exception further fixes
+Change to skip every 2nd supercharge image if 1/2 of set time delayed.
+
 0.3.2
 Stop adding to que if DeepStateService not responding/Down/Not on
 Delete superCharge Images first if que speed becoming issue
