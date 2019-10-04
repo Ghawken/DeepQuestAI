@@ -154,6 +154,7 @@ Better late than Never!
 Further image verification
 Change to using hdiutil to dismount - otherwise leaving diskimages-helper processes hanging
 Using deattach to hopefully avoid
+Oops
 
 0.3.8
 Verify image data before sending to DeepState (having some issues with invalid image data crashing deepstate)
