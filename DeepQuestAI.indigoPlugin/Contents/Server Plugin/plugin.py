@@ -352,8 +352,6 @@ hair dryer, toothbrush'''
             if dev.enabled:
                 stateList = [
                     {'key': 'deviceIsOnline', 'value': True},
-                    {'key': 'imagesSkipped', 'value': self.mainSkippedImages},
-                    {'key': 'imagesProcessed', 'value': self.mainProcessedImages},
                     {'key': 'ipaddress', 'value': self.ipaddress},
                     {'key': 'timeLastrun', 'value': self.mainTimeLastRun},
                     {'key': 'currentQue', 'value': self.quesize},
@@ -423,7 +421,9 @@ hair dryer, toothbrush'''
         try:
             self.logger.debug(u'Plugin closing & Ejecting RAMdisk')
             if os.path.exists('/Volumes/DeepStateTemp'):
-                subprocess.check_output(['/usr/sbin/diskutil', 'unmountdisk','force', self.RAMdevice] )
+                #subprocess.check_output(['/usr/bin/hdiutil', 'eject', '/Volumes/DeepStateTemp'])
+                #self.sleep(1)
+                subprocess.check_output(['/usr/bin/hdiutil', 'detach', '/Volumes/DeepStateTemp'] )
 
         except Exception as ex:
             self.logger.debug(u'Caught exception Ramdisk:'+unicode(ex))
@@ -1180,6 +1180,10 @@ hair dryer, toothbrush'''
         try:
             img = Image.open(path)
             img.verify()
+            img.close()
+            im = Image.open(path)
+            im.transpose(Image.FLIP_LEFT_RIGHT)
+            im.close()
             return True
         except Exception as ex:
             if self.debug3:
