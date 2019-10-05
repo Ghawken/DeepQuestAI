@@ -23,6 +23,16 @@
                 <TriggerLabel>Images Processed</TriggerLabel>
                 <ControlPageLabel>Images Processed</ControlPageLabel>
             </State>
+                     <State id="bytesProcessed">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Bytes of Images Processed</TriggerLabel>
+                <ControlPageLabel>Bytes of Images Processed</ControlPageLabel>
+            </State>
+                     <State id="dataProcessed">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Data Processed</TriggerLabel>
+                <ControlPageLabel>Data Processed</ControlPageLabel>
+            </State>
             <State id="imagesSkipped">
                 <ValueType>Number</ValueType>
                 <TriggerLabel>images Skipped</TriggerLabel>

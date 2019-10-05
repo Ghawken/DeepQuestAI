@@ -173,7 +173,8 @@ hair dryer, toothbrush'''
         self.mainSkippedImages = 0
         self.mainProcessedImages = 0
         self.mainTimeLastRun = ''
-
+        self.mainBytesProcessed = float(0)
+        self.mainDataProcessed = 'Unknown'
 
         self.next_update_check = t.time()
         MAChome = os.path.expanduser("~") + "/"
@@ -358,6 +359,17 @@ hair dryer, toothbrush'''
                     {'key': 'currentDelay', 'value': self.previoustimeDelay}
                 ]
                 dev.updateStatesOnServer(stateList)
+                try:
+                    self.mainProcessedImages = int(dev.states['imagesProcessed'])
+                    self.mainSkippedImages = int(dev.states['imagesSkipped'])
+                    self.mainBytesProcessed = float(dev.states['bytesProcessed'])
+                    self.mainDataProcessed = str(dev.states['dataProcessed'])
+                except:
+                    self.logger.debug(u'Error reading images Processed/Skipped states, setting to zero')
+                    self.mainProcessedImages = 0
+                    self.mainSkippedImages = 0
+                    self.mainBytesProcessed = float(0)
+                    self.mainDataProcessed = 'Unknown'
 
     # Shut 'em down.
     def deviceStopComm(self, dev):
@@ -373,7 +385,7 @@ hair dryer, toothbrush'''
         try:
             resetImages = t.time()+360
             restartPluginCheck = t.time() +10
-            mainDeviceupdate = t.time() +60
+            mainDeviceupdate = t.time() +10
             checkTempfiles = t.time() + 60 *60
             while True:
 
@@ -391,7 +403,7 @@ hair dryer, toothbrush'''
 
                 if t.time()>mainDeviceupdate:
                     self.refreshMainDevice()
-                    mainDeviceupdate = t.time()+60
+                    mainDeviceupdate = t.time()+10
 
                 if t.time()>checkTempfiles:
                     self.checkqueandDelete()
@@ -597,7 +609,7 @@ hair dryer, toothbrush'''
         devices.
         """
 
-        self.debugLog(u"refreshMainDevice() method called.")
+        #self.debugLog(u"refreshMainDevice() method called.")
 
         try:
             # Check to see if there have been any devices created.
@@ -615,15 +627,20 @@ hair dryer, toothbrush'''
     def refreshDataForDev(self, dev):
 
         if dev.configured:
-            self.debugLog(u"Found configured device: {0}".format(dev.name))
+            if self.debug3:
+                self.debugLog(u"Found configured device: {0}".format(dev.name))
         if dev.enabled:
             #currentque = int(self.que.qsize())
             #timeDifference = int(t.time() - t.mktime(dev.lastChanged.timetuple()))
             online = not self.deepstateIssue
+            self.mainDataProcessed= self.humansize(self.mainBytesProcessed)
+
             stateList = [
                     {'key': 'deviceIsOnline', 'value': online},
                     {'key': 'imagesSkipped', 'value': self.mainSkippedImages},
                     {'key': 'imagesProcessed', 'value': self.mainProcessedImages},
+                    {'key': 'dataProcessed', 'value': self.mainDataProcessed},
+                    {'key': 'bytesProcessed', 'value': self.mainBytesProcessed},
                     {'key': 'ipaddress', 'value': self.ipaddress},
                     {'key': 'timeLastrun', 'value': self.mainTimeLastRun},
                     {'key': 'currentQue', 'value': self.quesize},
@@ -970,6 +987,16 @@ hair dryer, toothbrush'''
         except:
             self.logger.exception(u'Caught Exception in threadDownloadImage')
 
+    def humansize(self, nbytes):
+        i = 0
+        suffixes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+        while nbytes >= 1024 and i < len(suffixes) - 1:
+            nbytes /= 1024.
+            i += 1
+        f = ('%.2f' % nbytes).rstrip('0').rstrip('.')
+        return '%s %s' % (f, suffixes[i])
+
+
     def threadSendtodeepstate(self):
 
         alreadysuperchargeSkip = False
@@ -1010,6 +1037,7 @@ hair dryer, toothbrush'''
                     else:
                         self.logger.info(u'Deepstate Processing slowing down, skipping ever 2nd SuperCharged Image')
                         self.mainSkippedImages = self.mainSkippedImages + 1
+
                         alreadysuperchargeSkip = True
                         try:
                             os.remove(path)
@@ -1058,6 +1086,11 @@ hair dryer, toothbrush'''
                 image = Image.open(path)
                 imagefresh = Image.open(path)
 
+                bytesImage = os.path.getsize(path)
+
+                if self.debug3:
+                    self.logger.debug(u'Size of Current Image:'+unicode(bytesImage))
+
                 self.reply = True
                 response = requests.post(urltosend, files={"image": liveurlphoto}, timeout=15).json()
                 if self.debug1:
@@ -1068,6 +1101,8 @@ hair dryer, toothbrush'''
                 anyobjectfound = False
                 if response['success'] == True:
                     self.mainProcessedImages = self.mainProcessedImages +1
+                    self.mainBytesProcessed = self.mainBytesProcessed + bytesImage
+
                     self.mainTimeLastRun = t.strftime('%c')
                     self.deepstateIssue = False
                     self.deepstatetimeouts = 0

@@ -150,6 +150,11 @@ ChangeLog:
 
 Better late than Never!
 
+0.4.0
+Add Bytes and Human readable data processed - amount of Image data read/processed
+Remove resetting counts to zero at restart.
+Remove some logging
+
 0.3.9
 Further image verification
 Change to using hdiutil to dismount - otherwise leaving diskimages-helper processes hanging
