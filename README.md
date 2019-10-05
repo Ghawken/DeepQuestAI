@@ -221,7 +221,6 @@ TODO
 
 Example Captures and Reports:
 
-![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg)
 
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Full_ExternalActionURL_1570248411.68.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Full_ExternalActionURL_1570248411.68.jpg)
 
@@ -229,17 +228,23 @@ Example Captures and Reports:
 
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Full_ExternalActionURL_1570249337.26.jpg)
 
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg)
+
+
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Full_ExternalActionURL_1570249554.39.jpg)
 
-![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_person_Crop_ExternalActionURL_1570249423.16.jpg)
 
-![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_person_Crop_ExternalActionURL_1570249505.94.jpg)
 
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_person_Full_ExternalActionURL_1570249423.16.jpg)
 
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_person_Crop_ExternalActionURL_1570249423.16.jpg)
+
+
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_person_Full_ExternalActionURL_1570249505.94.jpg)
 
-![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_person_Full_ExternalActionURL_1570249554.23.jpg)
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_person_Crop_ExternalActionURL_1570249505.94.jpg)
+
+
 
 
 
