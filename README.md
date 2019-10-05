@@ -32,7 +32,7 @@ Plugin Defaults to 7183
 Enter the ipaddress of your DeepStateAI API
 Enter the port that you are using.
 
-3.  Make sure running BlueIris Plugin version 1.1.12 and above
+3.  Make sure running BlueIris Plugin version >1.1.12 and above
 Enable within BlueIris plugin, the Broadcast setting
 
 # DeepStateAI Plugin
@@ -63,9 +63,12 @@ Obviously the number of cameras enabled, and speed of DeepStack will be very imp
 
 
 Warning:
-Currently checks and if 60 seconds behind image/checking will delete image and move on.
-Will add Plugin Setting for this shortly - but ideally want to make it related to velocity of change
-eg. if catching up continue, if getting longer and longer delete
+Currently checks and if > Abort Image Time seconds behind image/checking will delete image and move on.
+
+If velocity of Deepstate improving (eg. getting quicker) will continue without deleting
+Additionally:
+If image is a supercharge/additional image and the current processing delay is >1/2 total Abort time, will start skipping every 2nd supercharge image
+
 
 
 ### Enabled HTTP Image Server
@@ -150,6 +153,12 @@ ChangeLog:
 
 Better late than Never!
 
+0.4.1
+Change to download images threading, don't thread first or single image, thread the rest
+Remove some more logging
+Fixs download URL to work correctly with large images/slow internet
+Add some examples from ipcam forums
+
 0.4.0
 Add Bytes and Human readable data processed - amount of Image data read/processed
 Remove resetting counts to zero at restart.
@@ -208,3 +217,31 @@ TODO
 (decide how to do that with Indigo config currently)
 - Return Car back to all vehicles (currently just car)
 - Add time of photo taken to image, not time processed
+
+
+Example Captures and Reports:
+
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg)
+
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Full_ExternalActionURL_1570248411.68.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Full_ExternalActionURL_1570248411.68.jpg)
+
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Full_ExternalActionURL_1570248998.48.jpg)
+
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Full_ExternalActionURL_1570249337.26.jpg)
+
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Full_ExternalActionURL_1570249554.39.jpg)
+
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_person_Crop_ExternalActionURL_1570249423.16.jpg)
+
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_person_Crop_ExternalActionURL_1570249505.94.jpg)
+
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_person_Full_ExternalActionURL_1570249423.16.jpg)
+
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_person_Full_ExternalActionURL_1570249505.94.jpg)
+
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_car_Crop_ExternalActionURL_1570249337.26.jpg?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepState_person_Full_ExternalActionURL_1570249554.23.jpg)
+
+
+
+
+

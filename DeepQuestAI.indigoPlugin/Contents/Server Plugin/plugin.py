@@ -626,9 +626,9 @@ hair dryer, toothbrush'''
 
     def refreshDataForDev(self, dev):
 
-        if dev.configured:
-            if self.debug3:
-                self.debugLog(u"Found configured device: {0}".format(dev.name))
+        #if dev.configured:
+            #if self.debug3:
+                #self.debugLog(u"Found configured device: {0}".format(dev.name))
         if dev.enabled:
             #currentque = int(self.que.qsize())
             #timeDifference = int(t.time() - t.mktime(dev.lastChanged.timetuple()))
@@ -1344,22 +1344,23 @@ hair dryer, toothbrush'''
         try:
             if self.superCharge == False or external==True:
                 path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
-                ImageThread = threading.Thread(target=self.threadDownloadImage, args=[path, urlphoto])
-                ImageThread.start()
-                self.sleep(0.5)
+                #ImageThread = threading.Thread(target=self.threadDownloadImage, args=[path, urlphoto])
+                #ImageThread.start()
+                self.threadDownloadImage(path, urlphoto)  # if single image, don't thread... already in a addtoque thread
+                #self.sleep(0.5)
                 item = deepstateitem(path, indigodeviceid, cameraname, t.time(),external , False)
                 if self.debug1:
                     self.logger.debug(u'Putting item into DeepState Que: Item:'+unicode(item))
                 self.que.put(item)
 
-
             else:
                 ## Add first image, as not supercharge, add rest
                 numberofseconds = range( int(self.superChargeimageno) )  #seconds here changed usage to number of images
                 path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
-                ImageThread = threading.Thread(target=self.threadDownloadImage, args=[path, urlphoto])
-                ImageThread.start()
-                self.sleep(0.3)
+                #ImageThread = threading.Thread(target=self.threadDownloadImage, args=[path, urlphoto])
+                #ImageThread.start()
+                #self.sleep(0.3)
+                self.threadDownloadImage(path, urlphoto)   ## here first one don't thread as well...
                 item = deepstateitem(path, indigodeviceid, cameraname, t.time(), external, False)
                 self.que.put(item)
                 if self.debug1:
@@ -1376,6 +1377,7 @@ hair dryer, toothbrush'''
                     if self.debug1:
                         self.logger.debug(u'Putting item into DeepState Que: Item.Path:'+unicode(item.path))
                     self.que.put(item)
+
             self.quesize = int(self.que.qsize())
             if self.debug2:
                 self.logger.debug(u'Thread:AddtoQue:  Number in que:' + unicode(self.quesize))

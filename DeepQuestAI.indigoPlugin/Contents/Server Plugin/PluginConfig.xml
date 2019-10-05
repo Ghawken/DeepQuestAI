@@ -90,6 +90,14 @@
 				<Title>Generate Main Device</Title>
 				<CallbackMethod>generateMain</CallbackMethod>
 	</Field>
+    <Field id="info56" type="label" fontSize="small">
+    <Label>
+        The above Button Generates the DeepState Main Device
+        This reports currently activity and usage of the Deepstate
+        Service
+    </Label>
+    </Field>
+
 <Field id="sep49" type="separator"/>
             <Field id="deviceCamera" type="list" rows="14">
                 <Label>Enabled Camera(s)</Label>
