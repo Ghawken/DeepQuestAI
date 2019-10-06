@@ -153,6 +153,17 @@ ChangeLog:
 
 Better late than Never!
 
+0.5.0
+Better downloading, add to Que behaviour
+Use BI ALertImages - changes to BI Plugin updates to version 1.1.16
+If alertimage received/enabled in BI will always use Alert Image,plus whatever is setup
+Uses hires AlertImages - Capture hi Res ALert images should be enabled.
+Changes to BI Trigger setup to format
+On:
+192.168.1.6:4556/&CAM/&TYPE/&PROFILE/True/&ALERT
+Off:
+192.168.1.6:4556/&CAM/&TYPE/&PROFILE/False/&ALERT
+
 0.4.1
 Change to download images threading, don't thread first or single image, thread the rest
 Remove some more logging

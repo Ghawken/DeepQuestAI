@@ -53,13 +53,14 @@ kDefaultPluginPrefs = {
 }
 
 class deepstateitem:
-    def __init__(self, path, indigodeviceid, cameraname, utctime, external, superchargeImage):
+    def __init__(self, path, indigodeviceid, cameraname, utctime, external, superchargeImage, alertimage):
         self.path = path
         self.indigodeviceid = indigodeviceid
         self.cameraname = cameraname
         self.utctime = utctime
         self.external = external
         self.superchargeImage = superchargeImage
+        self.alertimage = alertimage
 
 class Plugin(indigo.PluginBase):
 
@@ -1279,14 +1280,14 @@ hair dryer, toothbrush'''
             return
         try:
             if imageType == 'URL':
-                Externaladd = threading.Thread(target=self.threadaddtoQue, args=[imageLocation, 'ExternalActionURL', 1, True])
+                Externaladd = threading.Thread(target=self.threadaddtoQue, args=[imageLocation, 'ExternalActionURL', 1, True, ''])
                 Externaladd.start()
                 return
             if imageType == 'FILE':
                 path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
                 copyfile(imageLocation,path)
                 ## create a temporary file from the one given - otherwise will be deleted
-                item = deepstateitem(path, 1, 'ExternalActionFile', t.time(), True, False)
+                item = deepstateitem(path, 1, 'ExternalActionFile', t.time(), True, False ,'')
                 if self.debug1:
                     self.logger.debug(u'Putting item into DeepState Que: Item:' + unicode(item))
                 self.que.put(item)
@@ -1298,8 +1299,7 @@ hair dryer, toothbrush'''
     ##
 
     def motionTrue(self, arg):
-        #i#f self.debug3:
-            #self.logger.debug(u"received Camera motionTrue message: %s" % (arg) )
+
         try:
             urlphoto = arg[0]+'?s='+str(self.imageScale)
             cameraname = arg[1]
@@ -1308,6 +1308,7 @@ hair dryer, toothbrush'''
             newimagedownloaded = arg[4]
             indigodeviceid = arg[5]
             typetrigger = arg[6]
+            alertimage = arg[7]
 
             if str(indigodeviceid) not in self.deviceCamerastouse:
                 #if self.debug1:
@@ -1320,7 +1321,10 @@ hair dryer, toothbrush'''
                     self.logger.debug('AUDIO Trigger Settings/Ignored.')
                 #self.logger.debug(unicode(self.deviceCamerastouse))
                 return
-            motionTrue = threading.Thread(target=self.threadaddtoQue, args=[urlphoto, cameraname,indigodeviceid, False])
+            if self.debug3:
+                self.logger.debug(u"received Camera motionTrue message: %s" % (arg))
+
+            motionTrue = threading.Thread(target=self.threadaddtoQue, args=[urlphoto, cameraname,indigodeviceid, False, alertimage])
             motionTrue.start()
             # given delayed images over 10 seconds or even longer need to thread below
             return
@@ -1328,7 +1332,65 @@ hair dryer, toothbrush'''
         except Exception as ex:
             self.logger.exception(u'Exception caught in motion true:'+unicode(ex))
 
-    def threadaddtoQue(self, urlphoto,cameraname,indigodeviceid, external):
+
+    def threadDownloadandaddtoque(self, path, url, cameraname,indigodeviceid, external, alertimage):
+        if self.debug2:
+            self.logger.debug(u'threadDownloadandaddtoque called.'+u' & Number of Active Threads:' + unicode(
+                threading.activeCount()))
+        try:
+             # add timer and move to chunk download...
+             start = t.time()
+             r = requests.get(url, stream=True, timeout=self.serverTimeout)
+             if r.status_code == 200:
+                 with open(path, 'wb') as f:
+                    for chunk in r.iter_content(1024):
+                        f.write(chunk)
+                        if t.time()>(start +self.imageTimeout):
+                            self.logger.error(u'downloadandaddtoque Download Image Taking too long.  Aborted.  ?Network issue')
+                            break
+                    if self.debug2:
+                        self.logger.debug(u'downloadandaddtoque Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
+             else:
+                 self.logger.debug(u'downloadandaddtoque Issue Downloading Image. Failed.')
+                 self.logger.debug(u'downloadandaddtoque Requests: status code:'+unicode(r.status_code)+ u' try one more time..')
+                 self.sleep(1)
+                 start = t.time()
+                 r2 = requests.get(url, stream=True, timeout=self.serverTimeout)
+                 if r2.status_code == 200:
+                     # self.logger.debug(u'Yah Code 200....')
+                     with open(path, 'wb') as f:
+                        for chunk in r2.iter_content(1024):
+                            f.write(chunk)
+                            if t.time()>(start +self.imageTimeout):
+                                self.logger.error(u'downloadandaddtoque Download Image Taking too long.  Aborted.  ?Network issue')
+                                break
+                        if self.debug2:
+                            self.logger.debug(u'downloadandaddtoque 2nd Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
+                 else:
+                     self.logger.exeception(u'downloadandaddtoque 2nd attempt failed.')
+                     return
+             # Image downloaded
+             # Now add to Que
+             item = deepstateitem(path, indigodeviceid, cameraname, t.time(), external, False, alertimage)
+             if self.debug1:
+                 self.logger.debug(u'downloadandaddtoque Putting item into DeepState Que: Item:' + unicode(item))
+             self.que.put(item)
+             return
+
+        except requests.exceptions.Timeout:
+            self.logger.debug(u'downloadandaddtoque  has timed out and cannot connect to BI Server.')
+
+        except requests.exceptions.ConnectionError:
+            self.logger.debug(u'downloadandaddtoque connectServer has a Connection Error and cannot connect to BI Server.')
+            self.sleep(5)
+
+        except IOError as ex:
+            self.logger.debug(u'downloadandaddtoque has an IO Error:'+unicode(ex))
+
+        except:
+            self.logger.exception(u'downloadandaddtoque Caught Exception in threadDownloadImage')
+
+    def threadaddtoQue(self, urlphoto,cameraname,indigodeviceid, external, alertimage):
         if self.debug3:
             self.logger.debug(u'Thread:AdddtoQue called.' + u' & Number of Active Threads:' + unicode(
                 threading.activeCount())+ u' and current que:'+unicode(self.quesize))
@@ -1338,20 +1400,29 @@ hair dryer, toothbrush'''
 
         if self.deepstateIssue:
             self.logger.error(u'Issue with DeepState Service:  Not adding anything to que. Aborted.')
-
             return
-
+#threadDownloadandaddtoque(self, path, url, cameraname,indigodeviceid, external, alertimage):
         try:
-            if self.superCharge == False or external==True:
+
+            if alertimage != '':
+                self.logger.debug(u'threadAddtoque:  Checking Alert image as exists..')
+                alertpath = self.folderLocationTemp + 'TempFile_AlertIMAGE_{}'.format(uuid.uuid4())
+                alertimagecheck = threading.Thread(target=self.threadDownloadandaddtoque, args=[alertpath, alertimage, cameraname, indigodeviceid, True, alertimage])
+                alertimagecheck.start()
+
+
+            if self.superCharge == False or external==True:  ##eg. one image
                 path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
-                #ImageThread = threading.Thread(target=self.threadDownloadImage, args=[path, urlphoto])
-                #ImageThread.start()
-                self.threadDownloadImage(path, urlphoto)  # if single image, don't thread... already in a addtoque thread
+                ImageThread = threading.Thread(target=self.threadDownloadandaddtoque, args=[path, urlphoto, cameraname, indigodeviceid, True, alertimage])
+                ImageThread.start()
+
+                # above combines single thread to download, when finished successfully add to que.
+                #self.threadDownloadImage(path, urlphoto)  # if single image, don't thread... already in a addtoque thread
                 #self.sleep(0.5)
-                item = deepstateitem(path, indigodeviceid, cameraname, t.time(),external , False)
-                if self.debug1:
-                    self.logger.debug(u'Putting item into DeepState Que: Item:'+unicode(item))
-                self.que.put(item)
+                #item = deepstateitem(path, indigodeviceid, cameraname, t.time(),external , False, alertimage)
+                #if self.debug1:
+                    #self.logger.debug(u'Putting item into DeepState Que: Item:'+unicode(item))
+                #self.que.put(item)
 
             else:
                 ## Add first image, as not supercharge, add rest
@@ -1361,22 +1432,22 @@ hair dryer, toothbrush'''
                 #ImageThread.start()
                 #self.sleep(0.3)
                 self.threadDownloadImage(path, urlphoto)   ## here first one don't thread as well...
-                item = deepstateitem(path, indigodeviceid, cameraname, t.time(), external, False)
+                item = deepstateitem(path, indigodeviceid, cameraname, t.time(), external, False, alertimage)
                 self.que.put(item)
                 if self.debug1:
                     self.logger.debug(u'Putting SuperCharge.1 item into DeepState Que: Item:' + unicode(item))
                 for n in numberofseconds:
                     self.logger.debug(u'************** Downloading Images:  Image:'+unicode(n) +u' for Camera:'+unicode(cameraname) )
                     path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
-                    ImageThread2 = threading.Thread(target=self.threadDownloadImage,
-                                               args=[path, urlphoto])
+                    ImageThread2 = threading.Thread(target=self.threadDownloadandaddtoque, args=[path, urlphoto, cameraname, indigodeviceid, True, alertimage])
                     ImageThread2.start()
                     self.sleep(float(self.superChargedelay))
+
                     #self.sleep(0.5)#sleep for the delay
-                    item = deepstateitem(path, indigodeviceid, cameraname, t.time(),external, True)
-                    if self.debug1:
-                        self.logger.debug(u'Putting item into DeepState Que: Item.Path:'+unicode(item.path))
-                    self.que.put(item)
+                    #item = deepstateitem(path, indigodeviceid, cameraname, t.time(),external, True, alertimage)
+                    #if self.debug1:
+                        #self.logger.debug(u'Putting item into DeepState Que: Item.Path:'+unicode(item.path))
+                    #self.que.put(item)
 
             self.quesize = int(self.que.qsize())
             if self.debug2:
