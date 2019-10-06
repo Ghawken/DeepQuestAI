@@ -518,9 +518,11 @@ hair dryer, toothbrush'''
 
         self.logger.debug(u'Starting DeepState send Thread:')
         ImageThread = threading.Thread(target=self.threadSendtodeepstate )
+        ImageThread.setDaemon(True  )
         ImageThread.start()
 
         serverthread = threading.Thread(target=self.listenHTTP)
+        serverthread.setDaemon(True)
         serverthread.start()
         #self.listenHTTP()
 
@@ -1281,6 +1283,7 @@ hair dryer, toothbrush'''
         try:
             if imageType == 'URL':
                 Externaladd = threading.Thread(target=self.threadaddtoQue, args=[imageLocation, 'ExternalActionURL', 1, True, ''])
+                Externaladd.setDaemon(True)
                 Externaladd.start()
                 return
             if imageType == 'FILE':
@@ -1325,6 +1328,7 @@ hair dryer, toothbrush'''
                 self.logger.debug(u"received Camera motionTrue message: %s" % (arg))
 
             motionTrue = threading.Thread(target=self.threadaddtoQue, args=[urlphoto, cameraname,indigodeviceid, False, alertimage])
+            motionTrue.setDaemon(True)
             motionTrue.start()
             # given delayed images over 10 seconds or even longer need to thread below
             return
@@ -1408,12 +1412,14 @@ hair dryer, toothbrush'''
                 self.logger.debug(u'threadAddtoque:  Checking Alert image as exists..')
                 alertpath = self.folderLocationTemp + 'TempFile_AlertIMAGE_{}'.format(uuid.uuid4())
                 alertimagecheck = threading.Thread(target=self.threadDownloadandaddtoque, args=[alertpath, alertimage, cameraname, indigodeviceid, True, alertimage])
+                alertimagecheck.setDaemon(True)
                 alertimagecheck.start()
 
 
             if self.superCharge == False or external==True:  ##eg. one image
                 path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
-                ImageThread = threading.Thread(target=self.threadDownloadandaddtoque, args=[path, urlphoto, cameraname, indigodeviceid, True, alertimage])
+                ImageThread = threading.Thread(target=self.threadDownloadandaddtoque, args=[path, urlphoto, cameraname, indigodeviceid, True, alertimage] )
+                ImageThread.setDaemon(True)
                 ImageThread.start()
 
                 # above combines single thread to download, when finished successfully add to que.
@@ -1440,6 +1446,7 @@ hair dryer, toothbrush'''
                     self.logger.debug(u'************** Downloading Images:  Image:'+unicode(n) +u' for Camera:'+unicode(cameraname) )
                     path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
                     ImageThread2 = threading.Thread(target=self.threadDownloadandaddtoque, args=[path, urlphoto, cameraname, indigodeviceid, True, alertimage])
+                    ImageThread2.setDaemon(True)
                     ImageThread2.start()
                     self.sleep(float(self.superChargedelay))
 

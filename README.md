@@ -153,6 +153,10 @@ ChangeLog:
 
 Better late than Never!
 
+0.5.1
+Trial of Daemon threads instead - to avoid hanging when closing RAMdisk
+(only occured once, but needed restart as couldn't manually eject)
+
 0.5.0
 Better downloading, add to Que behaviour
 Use BI ALertImages - changes to BI Plugin updates to version 1.1.16
