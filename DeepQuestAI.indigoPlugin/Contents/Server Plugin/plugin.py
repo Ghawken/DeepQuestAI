@@ -970,7 +970,7 @@ hair dryer, toothbrush'''
                         if self.debug2:
                             self.logger.debug(u'2nd Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
                  else:
-                     self.logger.exeception(u'2nd attempt fakied.')
+                     self.logger.debug(u'2nd attempt failed.')
 
 
         except requests.exceptions.Timeout:
