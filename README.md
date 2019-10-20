@@ -153,6 +153,18 @@ ChangeLog:
 
 Better late than Never!
 
+0.5.5
+Add ability to set a archive smb network directory.
+Needs to be a smb network location:  (if local directory just use SaveDirectory)
+Format:
+//USERNAME:PASSWORD@SERVER/Directory/Directory
+
+
+Will copy files 2 days old, every 24 hours to this directory preserving datetime info of files for future reference
+Add /archive/deepstateobject.html to HTML server - serving these archive images as well
+Add menu item to copy to archive
+Few text changes to config items
+
 0.5.1
 Trial of Daemon threads instead - to avoid hanging when closing RAMdisk
 (only occured once, but needed restart as couldn't manually eject)

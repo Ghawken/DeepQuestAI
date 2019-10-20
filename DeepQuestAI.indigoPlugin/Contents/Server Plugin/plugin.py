@@ -30,6 +30,8 @@ import plistlib
 
 import glob
 
+from contextlib import contextmanager
+
 import StringIO
 from Queue import *
 import threading
@@ -153,13 +155,14 @@ hair dryer, toothbrush'''
         # below for http server
         self.HTMLimageNo = 0
         self.HTMLlastObject = 'unknown'
+        self.HTMLarchivelastObject = 'unknown'
         self.HTMLlistFiles = []
         #self.imageNoCar = 0
         #self.imageNoCarCrop = 0
         #self.imageNoPerson = 0
         #self.imageNoPersonCrop = 0
 
-
+        self.copyfilescurrently = False
         self.RAMdevice =''
         self.RAMpath = ''
 
@@ -181,12 +184,15 @@ hair dryer, toothbrush'''
         MAChome = os.path.expanduser("~") + "/"
 
         self.saveDirectory = self.pluginPrefs.get('directory', '')
+        self.archiveDirectory = self.pluginPrefs.get('archivedirectory', '')
         self.tempDirectory = self.pluginPrefs.get('tempdirectory','')
         # default below
         self.folderLocation = MAChome + "Documents/Indigo-DeepQuestAI/"
         #self.folderLocationFaces = MAChome + "Documents/Indigo-DeepQuestAI/Faces/"
         #self.folderLocationCars = MAChome + "Documents/Indigo-DeepQuestAI/Cars/"
         #self.folderLocationTemp = MAChome + "Documents/Indigo-DeepQuestAI/Temp/"
+
+        self.archiveMounted = False
 
         if self.saveDirectory == '':
             self.saveDirectory = self.folderLocation
@@ -248,7 +254,6 @@ hair dryer, toothbrush'''
 
         self.pluginIsInitializing = False
 
-
     def closedPrefsConfigUi(self, valuesDict, userCancelled):
 
         self.debugLog(u"closedPrefsConfigUi() method called.")
@@ -296,6 +301,7 @@ hair dryer, toothbrush'''
             self.debug5 = valuesDict.get('debug5', False)
 
             self.saveDirectory = valuesDict.get('directory', '')
+            self.archiveDirectory = valuesDict.get('archivedirectory', '')
             self.tempDirectory = valuesDict.get('tempdirectory','')
 
             self.indigo_log_handler.setLevel(self.logLevel)
@@ -388,6 +394,8 @@ hair dryer, toothbrush'''
             restartPluginCheck = t.time() +10
             mainDeviceupdate = t.time() +10
             checkTempfiles = t.time() + 60 *60
+            archiveImages = t.time() + 60*60 * 24
+
             while True:
 
                 self.sleep(1)
@@ -399,6 +407,7 @@ hair dryer, toothbrush'''
 
                 if t.time()>restartPluginCheck and self.pluginneedsrestart:
                     self.ejectRAMdisk()
+                    self.unmountArchive()
                     self.sleep(5)
                     self.restartPlugin()
 
@@ -410,9 +419,14 @@ hair dryer, toothbrush'''
                     self.checkqueandDelete()
                     checkTempfiles = t.time()+ 60*60
 
+                if t.time()>archiveImages:
+                    self.copytoArchive()
+                    archiveImages = archiveImages + 60*60*24
+
         except self.StopThread:
             self.debugLog(u'Restarting/or error. Stopping Main thread.')
             self.ejectRAMdisk()
+            self.unmountArchive()
             pass
 
     def shutdown(self):
@@ -441,6 +455,97 @@ hair dryer, toothbrush'''
         except Exception as ex:
             self.logger.debug(u'Caught exception Ramdisk:'+unicode(ex))
             pass
+
+    def unmountArchive(self):
+        self.logger.debug(u'Unmounting Archive')
+        local_dir = self.saveDirectory + 'ARCHIVE'
+        retcode = subprocess.call(["/sbin/umount", local_dir])
+        if retcode != 0:
+            self.logger.debug("Unmount operation failed.  retcode:" + unicode(retcode))
+        else:
+            self.logger.info(u'Archive successfully dismounted.')
+            self.archiveMounted = False
+        return
+
+
+    def useArchive(self):
+        self.logger.debug(u'Mounting Archive for use whilst plugin running')
+        remote_dir = self.archiveDirectory
+        local_dir= self.saveDirectory+'ARCHIVE'
+        self.logger.debug('Mounting SMB path for archive use: remote_Dir:' + unicode(remote_dir) + '  local_Dir:' + unicode(local_dir))
+        local_dir = os.path.abspath(local_dir)
+        self.logger.debug('Mounting: Localdir:' + unicode(local_dir))
+        retcode = subprocess.call(["/sbin/mount", "-t", "smbfs", remote_dir, local_dir])
+
+        if retcode != 0:
+            self.logger.info("Mount operation failed. retcode:" + unicode(retcode))
+            return False
+        else:
+            self.archiveMounted = True
+            self.logger.info(u'Archive SMB drive successfully mounted: '+unicode(remote_dir))
+            return True
+
+    def copytoArchive(self):
+        self.logger.debug(u'Running copy thread..')
+
+        if self.copyfilescurrently==False:
+            CopyArchive = threading.Thread(target=self.ThreadcopytoArchive() )
+            CopyArchive.setDaemon(True  )
+            CopyArchive.start()
+
+    def ThreadcopytoArchive(self):
+        self.logger.debug(u'Thread: Copying Files to Archive.')
+
+        if self.archiveMounted:
+            try:
+                self.copyfilescurrently = True
+                src = self.saveDirectory
+                dst = self.saveDirectory + 'ARCHIVE'
+                two_days = datetime.datetime.now() - datetime.timedelta(days=2)
+
+                # copy existing directory structure of image directories to archive
+                for dirpath, dirnames, filenames in os.walk(src):
+                    if 'ARCHIVE' in dirpath or 'Temp' in dirpath:
+                        #self.logger.debug(u'Skip Archive/Temp directory for obvious reasons: DirPath:'+unicode(dirpath))
+                        continue
+                    self.logger.debug(u'Two days equals:' + unicode(two_days))
+                    structure = os.path.join(dst, dirpath[len(src):])
+                    if not os.path.isdir(structure):
+                        os.mkdir(structure)
+                        self.logger.info(u'Archive: Creating directory: Structure: '+unicode(structure)+ u'  DirectoryName:'+unicode(dirnames))
+                    # create directories
+                    if dirpath != src:
+                    # usefilenames to copy
+                        self.logger.debug(u'dirpath:' + unicode(dirpath) + u' dirnames:' + unicode( dirnames) + u' and filenames:' + unicode(filenames))
+                        for f in filenames:
+                            if str(f).startswith('.')==False:
+                                filetime = datetime.datetime.fromtimestamp(os.path.getmtime(os.path.join(dirpath, f)))
+                                #self.logger.debug(u'FileName:'+unicode(os.path.join(dirpath, f))+ u' and filetime:'+unicode(filetime))
+                                if filetime >= two_days:
+                                    #self.logger.debug(u'Two days equals:' + unicode(two_days))
+                                    self.logger.debug(u'Skipping file...' + unicode( os.path.join(dirpath, f)) + u' and filetime:' + unicode(filetime))
+                                    # new file skip moving
+                                else:
+                                    try:
+
+                                        self.logger.debug(u'Moving file...'+unicode(os.path.join(dirpath, f)) + u' and filetime:'+unicode(filetime))
+                                        shutil.copy2(os.path.join(dirpath, f), structure)
+                                        # use copy2 to copy datetime info and overwrite files if they already exists
+                                        os.remove(os.path.join(dirpath, f))
+                                    except Exception as ex:
+                                        self.logger.debug(u'Exception moving file:'+ex)
+                                        pass
+
+
+                self.copyfilescurrently = False
+            except:
+                self.logger.exception(u'copytoArchive Exception:')
+                self.copyfilescurrently = False
+
+        else:
+            self.logger.info(u'Archive drive is not mounted.  Please correct and setup from Plugin Config.')
+            self.logger.info(u'Check network location exists and Directory writable by selected user')
+
 
 
     def createRAMdisk(self):
@@ -507,6 +612,10 @@ hair dryer, toothbrush'''
         if self.useRAMdisk:
             self.createRAMdisk()
 
+        if self.archiveDirectory != '':
+            self.createFolder('ARCHIVE')
+            self.useArchive()
+
         if not os.path.exists(self.folderLocationTemp):
             os.makedirs(self.folderLocationTemp)
 
@@ -543,6 +652,41 @@ hair dryer, toothbrush'''
                 return (False, valuesDict, errorDict)
             else:
                 self.logger.debug(u'DiskAcces:  All Good.  Can Read/Write to this location')
+
+        if valuesDict.get('archivedirectory', '') != '' and self.archiveMounted==False:
+            # check read/write access to directory
+            try:
+                self.createFolder('ARCHIVE')
+                self.saveDirectory = valuesDict['directory']
+                self.archiveDirectory = valuesDict['archivedirectory']
+                self.sleep(1)
+
+                if self.useArchive():
+                    # mounted successully
+                    pass
+                else:
+                    self.archiveMounted = False
+                    self.archiveDirectory = ''
+                    errorDict['archivedirectory'] = 'Unable to access this directory.  Make sure Username password in correct format'
+                    errorDict['showAlertText'] = 'Unable to setup access to SMB archive.  Please ensure network location and directory exisits'
+                    return (False, valuesDict, errorDict)
+
+            except:
+                self.logger.error(u'Issue Creating Archive Access')
+                errorDict['archivedirectory']='Unable to access this directory.  Make sure Username password in correct format'
+                errorDict['showAlertText']= 'Unable to setup access to SMB archive'
+                self.archiveDirectory =''
+                self.archiveMounted = False # shouldnt be needed, easier to read
+                return (False,valuesDict, errorDict)
+
+        if valuesDict.get('archivedirectory', '') == '':
+            # remove archive, dismount etc.
+            if self.archiveMounted:
+                self.unmountArchive()
+            self.archiveDirectory = ''
+
+
+
         if valuesDict.get('directory','') == '':
             MAChome = os.path.expanduser("~") + "/"
             folderLocation = MAChome + "Documents/Indigo-DeepQuestAI/"
@@ -1515,7 +1659,53 @@ class httpHandler(BaseHTTPRequestHandler):
         try:
 
             if self.plugin.debug4:
-                self.plugin.logger.debug(u'Html Server: do_get: self.path = '+unicode(self.path[1:-5]))
+                self.plugin.logger.debug(u'Html Server: do_get: self.path = '+unicode(self.path) )
+                #self.plugin.logger.debug(u'Html Server: do_get:self.path[1:-5]:'+unicode(self.path[1:-5]) )
+                #self.plugin.logger.debug(u'Html Server: do_get:self.path[1:8]:' + unicode(self.path[1:8]))
+                #self.plugin.logger.debug(u'Html Server: do_get:self.path[9:-5]:' + unicode(self.path[9:-5]))
+
+            if self.path[1:8]=='archive' and self.plugin.archiveMounted:
+                if self.plugin.debug4:
+                    self.plugin.logger.debug(u'Seems like a Archive directory is being requested.')
+                if self.path[9:-5] in self.plugin.alldeepstateclasses:
+                    objectName = self.path[9:-5]  # get the named object/is checked above
+                    if self.plugin.HTMLarchivelastObject != objectName:
+                        # serving new image - reset the count
+                        # and re-read the image Directories!
+                        self.plugin.HTMLarchivelastObject = objectName
+                        self.plugin.HTMLimageNo = 0
+                        if self.plugin.debug4:
+                            self.plugin.logger.debug('HTML: do_Get: New image Serving reset count, and re-reading directory')
+                        self.plugin.HTMLlistFiles = self.date_sortfiles(self.plugin.saveDirectory + 'ARCHIVE/'+ objectName + '/' + 'DeepState_' + objectName + '_Full*.jpg')
+                    else:
+                        if not self.plugin.HTMLlistFiles:
+                            # empty
+                            self.plugin.HTMLlistFiles = self.date_sortfiles(self.plugin.saveDirectory + 'ARCHIVE/' + objectName + '/' + 'DeepState_' + objectName + '_Full*.jpg')
+                    if self.plugin.debug4:
+                        self.plugin.logger.debug(u'd_Get: Html ObjectName:' + unicode(objectName))
+                    # ignore the full/crop bit
+                    # just serve the full one
+                    self.send_response(200)
+                    mimetype = 'image/jpg'
+                    self.send_header('Content-type', mimetype)
+                    self.end_headers()
+
+                    if self.plugin.HTMLimageNo >= len(self.plugin.HTMLlistFiles):
+                        self.plugin.HTMLimageNo = 0
+                    # self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
+                    if self.plugin.debug4:
+                        self.plugin.logger.debug(u'self.plugin.imageNo =' + unicode(self.plugin.HTMLimageNo))
+
+                    if self.plugin.HTMLlistFiles:
+                        file = open(self.plugin.HTMLlistFiles[self.plugin.HTMLimageNo], 'rb')
+                        self.wfile.write(file.read())
+                        file.close()
+                        self.plugin.HTMLimageNo = self.plugin.HTMLimageNo + 1
+                    else:
+                        file = open(self.plugin.pathtoNotFound, 'rb')
+                        self.wfile.write(file.read())
+                        file.close()
+                    return
 
             if self.path[1:-5] in self.plugin.alldeepstateclasses:
             ## Okay so requested html path contains a DeepStateObject

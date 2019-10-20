@@ -8,4 +8,8 @@
         <Name>Set Debug to Max</Name>
         <CallbackMethod>toggleDebugMax</CallbackMethod>
     </MenuItem>
+        <MenuItem id="testCopyArchive">
+        <Name>Copy Images to Archive</Name>
+        <CallbackMethod>copytoArchive</CallbackMethod>
+    </MenuItem>
 </MenuItems>
