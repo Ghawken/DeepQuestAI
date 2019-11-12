@@ -1555,7 +1555,7 @@ hair dryer, toothbrush'''
             if alertimage != '':
                 self.logger.debug(u'threadAddtoque:  Checking Alert image as exists..')
                 alertpath = self.folderLocationTemp + 'TempFile_AlertIMAGE_{}'.format(uuid.uuid4())
-                alertimagecheck = threading.Thread(target=self.threadDownloadandaddtoque, args=[alertpath, alertimage, cameraname, indigodeviceid, True, alertimage])
+                alertimagecheck = threading.Thread(target=self.threadDownloadandaddtoque, args=[alertpath, alertimage, cameraname, indigodeviceid, external, alertimage])
                 alertimagecheck.setDaemon(True)
                 alertimagecheck.start()
 
