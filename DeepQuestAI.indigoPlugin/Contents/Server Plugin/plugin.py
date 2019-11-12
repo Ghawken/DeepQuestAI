@@ -1562,7 +1562,7 @@ hair dryer, toothbrush'''
 
             if self.superCharge == False or external==True:  ##eg. one image
                 path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
-                ImageThread = threading.Thread(target=self.threadDownloadandaddtoque, args=[path, urlphoto, cameraname, indigodeviceid, True, alertimage] )
+                ImageThread = threading.Thread(target=self.threadDownloadandaddtoque, args=[path, urlphoto, cameraname, indigodeviceid, external, alertimage] )
                 ImageThread.setDaemon(True)
                 ImageThread.start()
 
