@@ -98,6 +98,17 @@
 				<Label>Confidence level above which to be used 0-1 eg. 0.6:</Label>
 			</Field>
         <Field id="sep3" type="separator"/>
+
+         <Field id="deviceCamera" type="list" rows="8">
+                <Label>Save Images for these Camera(s) only</Label>
+                <List class="self" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera" method="EventreturnCameras"/>
+            </Field>
+  <Field id="spaceacc2" type="label" fontSize="small" fontColor="black">
+    <Label>
+       Save images if object found only for above selected Cameras
+    </Label>
+  </Field>
+
     </ConfigUI>
          <States>
              <State id="objectType">

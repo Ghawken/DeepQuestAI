@@ -920,7 +920,7 @@ hair dryer, toothbrush'''
             ## Save Full image here as well
             image.save(self.folderLocationCars + "DeepStateCarsFull_{}_{}.jpg".format(cameraname, str(t.time())))
 
-            self.checkDevices('car', cameraname, filename, confidence)
+            self.checkDevices('car', cameraname, filename, confidence, indigodeviceid)
             self.triggerCheck('car', cameraname, indigodeviceid, 'objectTrigger', confidence, external)
         except Exception as ex:
             self.logger.debug('Error Saving to Vehicles: ' + unicode(ex))
@@ -932,7 +932,7 @@ hair dryer, toothbrush'''
             cropped = image.crop((x_min, y_min, x_max, y_max))
             filename= self.folderLocationFaces + "DeepStateFaces_{}_{}.jpg".format(cameraname, str(t.time()))
             cropped.save(filename)
-            self.checkDevices('person', cameraname, filename, confidence)
+            self.checkDevices('person', cameraname, filename, confidence, indigodeviceid)
             self.triggerCheck('person', cameraname, indigodeviceid, 'objectTrigger', confidence, external)
 
         except Exception as ex:
@@ -945,7 +945,7 @@ hair dryer, toothbrush'''
         try:
             filenameCrop = self.saveDirectory+deepStateObject+'/' + 'DeepState_'+deepStateObject+'_Crop_{}_{}.jpg'.format(cameraname, str(t.time()))
             filenameFull = self.saveDirectory+deepStateObject+'/' + 'DeepState_'+deepStateObject+'_Full_{}_{}.jpg'.format(cameraname, str(t.time()))
-            if self.checkDevices(deepStateObject, cameraname, filenameFull, confidence):
+            if self.checkDevices(deepStateObject, cameraname, filenameFull, confidence, indigodeviceid):
                 # only save images if a Device exists - still trigger though regardless
                 cropped = imagefresh.crop((x_min, y_min, x_max, y_max))
                 cropped.save(filenameCrop)
@@ -956,7 +956,7 @@ hair dryer, toothbrush'''
         except Exception as ex:
             self.logger.exception('Error Saving All Objects: ' + unicode(ex))
 
-    def checkDevices(self, objectname, cameraname, filename, confidence):
+    def checkDevices(self, objectname, cameraname, filename, confidence, indigodeviceid):
 
         self.logger.debug('CheckDevices run')
         for dev in indigo.devices.itervalues("self.DeepStateObject"):
@@ -968,13 +968,19 @@ hair dryer, toothbrush'''
                 if objectName == objectname:
                     dev.updateStateOnServer('objectType', value=objectname)
                     dev.updateStateOnServer('cameraFound', value=cameraname)
-                    dev.updateStateOnServer('imageLink', value=filename)
                     time = t.time()
                     update_time = t.strftime('%c')
                     dev.updateStateOnServer('timeLastFound', value=time)
                     dev.updateStateOnServer('confidence', value=confidence)
                     dev.updateStateOnServer('date', value=update_time)
-                    return True
+                    if str(indigodeviceid) in dev.pluginProps['deviceCamera']:  # check camera enabled, but update device states regardless
+                        dev.updateStateOnServer('imageLink', value=filename)
+                        self.logger.debug(u"Image "+unicode(filename)+ " saved as Camera Selected in device State.")
+                        return True
+                    else:
+                        dev.updateStateOnServer('imageLink', value="")
+                        self.logger.debug(u"Image not saved as Camera NOT Selected in device State.")
+                        return False
         return False
 
     def checkfaces(self, cropped, ipaddress, cameraname, image):
@@ -1000,7 +1006,7 @@ hair dryer, toothbrush'''
                 self.logger.debug('DeepState Faces Request failed:')
 
             # update devices
-            self.checkDevices(cropped, 'person',ipaddress, cameraname, image, filename)
+            self.checkDevices(cropped, 'person',ipaddress, cameraname, image, filename, indigodeviceid)
             self.triggerCheck('person', cameraname, 'objectTrigger')
 
         except Exception as ex:
