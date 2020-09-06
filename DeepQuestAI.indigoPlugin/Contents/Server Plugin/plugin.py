@@ -55,7 +55,7 @@ kDefaultPluginPrefs = {
 }
 
 class deepstateitem:
-    def __init__(self, path, indigodeviceid, cameraname, utctime, external, superchargeImage, alertimage):
+    def __init__(self, path, indigodeviceid, cameraname, BIpathusernamepassword, utctime, external, superchargeImage, alertimage):
         self.path = path
         self.indigodeviceid = indigodeviceid
         self.cameraname = cameraname
@@ -63,6 +63,7 @@ class deepstateitem:
         self.external = external
         self.superchargeImage = superchargeImage
         self.alertimage = alertimage
+        self.BIpathusernamepassword = BIpathusernamepassword
 
 class Plugin(indigo.PluginBase):
 
@@ -938,7 +939,7 @@ hair dryer, toothbrush'''
         except Exception as ex:
             self.logger.debug('Error Saving to Vehicles: ' + unicode(ex))
 
-    def checkallobjects(self, deepStateObject, liveurlphoto, ipaddress, cameraname, image, imagefresh, indigodeviceid, confidence, x_min,x_max,y_min,y_max, external):
+    def checkallobjects(self, deepStateObject, liveurlphoto, ipaddress, cameraname, alerturl, image, imagefresh, indigodeviceid, confidence, x_min,x_max,y_min,y_max, external):
 
         self.logger.debug('Now checking for All Objects only: Checking against:'+unicode(deepStateObject))
 
@@ -950,11 +951,40 @@ hair dryer, toothbrush'''
                 cropped = imagefresh.crop((x_min, y_min, x_max, y_max))
                 cropped.save(filenameCrop)
                 image.save(filenameFull)
+                ## Call Alert URL
+                self.call_alertURL(alerturl,deepStateObject)
 
             self.triggerCheck(deepStateObject, cameraname, indigodeviceid, 'objectTrigger', confidence, external)
 
         except Exception as ex:
             self.logger.exception('Error Saving All Objects: ' + unicode(ex))
+
+    def call_alertURL(self, alerturl, deepStateObject):
+        self.logger.debug(u'call_alertURL'+unicode(alerturl))
+        try:
+            alerturl = alerturl + "DeepStateAlert_"+str(deepStateObject)
+            r = requests.get(alerturl, timeout=self.serverTimeout)
+            if r.status_code == 200:
+                self.logger.debug("AlertURL successfully called: "+alerturl)
+                if self.debug3:
+                    self.logger.debug(unicode(r.text))
+                return
+            else:
+                self.logger.debug("Error sending alertURL back to BI")
+                if self.debug3:
+                    self.logger.debug(unicode(r.text))
+                return
+        # self.logger.debug(u'Yah Code 200....')
+
+        except requests.exceptions.Timeout:
+            self.logger.debug(u'call_alerURL has timed out and cannot connect to BI Server.')
+            pass
+
+        except requests.exceptions.ConnectionError:
+            self.logger.debug(u'call_alertURL has a Connection Error and cannot connect to BI Server.')
+            self.sleep(5)
+            pass
+
 
     def checkDevices(self, objectname, cameraname, filename, confidence, indigodeviceid):
 
@@ -1161,6 +1191,7 @@ hair dryer, toothbrush'''
             cameraname= item.cameraname
             indigodeviceid = item.indigodeviceid
             path = item.path
+            alerturl = item.BIpathusernamepassword
             utctime = item.utctime
             external = item.external
             superchargeImage =item.superchargeImage
@@ -1288,10 +1319,11 @@ hair dryer, toothbrush'''
                             #self.checkfaces2(cropped, ipaddress, cameraname, imagefresh, indigodeviceid, confidence, x_min, x_max, y_min, y_max, external)
                             #image.save(self.folderLocationFaces + "DeepStateFacesFull_{}_{}.jpg".format(cameraname, str(t.time())))
                         #if carfound:
-                        self.checkallobjects(label, cropped,ipaddress,cameraname, image,imagefresh, indigodeviceid, confidence,x_min, x_max,  y_min, y_max, external)
+                        self.checkallobjects(label, cropped,ipaddress,cameraname, alerturl, image,imagefresh, indigodeviceid, confidence,x_min, x_max,  y_min, y_max, external)
                             #self.checkcars(cropped, ipaddress, cameraname, image, imagefresh, indigodeviceid, confidence,x_min, x_max,  y_min, y_max, external)
                             #image.save(self.folderLocationCars + "DeepStateCarsFull_{}_{}.jpg".format(cameraname, str(t.time())))
                             #carfound = False
+             #   listtosend.append("http://" + str(self.serverusername) + ':' + str(self.serverpassword) + '@' + str(self.serverip) + ':' + str(self.serverport) + '/image/' + cameraname)
 
                 else:
                     self.logger.debug(u'Thread:SendtoDeepstate: DeepState Request failed:')
@@ -1573,7 +1605,7 @@ hair dryer, toothbrush'''
                 path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
                 copyfile(imageLocation,path)
                 ## create a temporary file from the one given - otherwise will be deleted
-                item = deepstateitem(path, 1, 'ExternalActionFile', t.time(), True, False ,'')
+                item = deepstateitem(path, 1, 'ExternalActionFile', "", t.time(), True, False ,'')
                 if self.debug1:
                     self.logger.debug(u'Putting item into DeepState Que: Item:' + unicode(item))
                 self.que.put(item)
@@ -1658,7 +1690,8 @@ hair dryer, toothbrush'''
                      return
              # Image downloaded
              # Now add to Que
-             item = deepstateitem(path, indigodeviceid, cameraname, t.time(), external, False, alertimage)
+             urlalertflag = self.get_urlalertflag(url, cameraname)
+             item = deepstateitem(path, indigodeviceid, cameraname, urlalertflag, t.time(), external, False, alertimage)
              if self.debug1:
                  self.logger.debug(u'downloadandaddtoque Putting item into DeepState Que: Item:' + unicode(item))
              self.que.put(item)
@@ -1676,6 +1709,22 @@ hair dryer, toothbrush'''
 
         except:
             self.logger.exception(u'downloadandaddtoque Caught Exception in threadDownloadImage')
+
+    def get_urlalertflag(self, urlphoto, cameraname):
+        try:
+            if self.debug3:
+                self.logger.debug(u'converting to Alert URL from urlphoto:'+urlphoto)
+            url = urlphoto.split('/')
+            beginning = url[2]
+            #eg. 'downstairs:paszsword@192.168.1.208:801'
+            alerturl = "http://"+str(beginning)+ "/" +'admin?camera='+str(cameraname)+ "&flagalert=1&memo="  ##add memo text at end...
+            if self.debug3:
+                self.logger.debug(u"AlertURL:"+unicode(alerturl))
+            return alerturl
+        except:
+            self.logger.debug(u'Exception with get_urlalertflag')
+            return ""
+            self.logger.exception()
 
     def threadaddtoQue(self, urlphoto,cameraname,indigodeviceid, external, alertimage):
         if self.debug3:
@@ -1721,7 +1770,8 @@ hair dryer, toothbrush'''
                 #ImageThread.start()
                 #self.sleep(0.3)
                 self.threadDownloadImage(path, urlphoto)   ## here first one don't thread as well...
-                item = deepstateitem(path, indigodeviceid, cameraname, t.time(), external, False, alertimage)
+                urlalertflag = self.get_urlalertflag(urlphoto,cameraname)
+                item = deepstateitem(path, indigodeviceid, cameraname, urlalertflag, t.time(), external, False, alertimage)
                 self.que.put(item)
                 if self.debug1:
                     self.logger.debug(u'Putting SuperCharge.1 item into DeepState Que: Item:' + unicode(item))

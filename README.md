@@ -210,6 +210,26 @@ ChangeLog:
 
 Better late than Never!
 
+0.6.0
+Report back to BlueIris and Flag video if object detected
+Only will flag BI videos when Deep State Object device exists (same for saving images)
+Use 'memo' = DeepState_ObjectType
+Can't seem to access this memotext at moment within BI or iOS, but potentially with BI update.
+
+0.5.9 Addition
+
+Action Group 
+Check URL Image and Run Action Group:
+
+Checks a URL Image from BI Camera for example, but can be any URL Image.
+Checks for presence or absence of an object e.g car gone, person present.
+Then runs an action group depending on presence or absence
+eg.
+Door closed trigger, run this AG, perhaps with delay
+Checks Camera for Person present - if no person run action group to turn lights off
+eg.
+Check Garage for Car - Car absent, run appropriate action groups
+
 0.5.5
 Add ability to set a archive smb network directory.
 Needs to be a smb network location:  (if local directory just use SaveDirectory)
