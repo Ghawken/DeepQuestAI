@@ -1233,12 +1233,9 @@ hair dryer, toothbrush'''
 
                 if self.debug3:
                     self.logger.debug(u'Sending to :'+unicode(urltosend))
-
-
                 liveurlphoto = open(path, 'rb').read()
                 image = Image.open(path)
                 imagefresh = Image.open(path)
-
                 bytesImage = os.path.getsize(path)
 
                 if self.debug3:
@@ -1379,9 +1376,145 @@ hair dryer, toothbrush'''
             return False
 
 
-
-
     ## Actions.xml
+    def checkCameraAG(self,action):
+        self.logger.debug(u'checkCameraAG called')
+        self.logger.debug(unicode(action))
+        confidenceLevel = action.props.get('confidence', 0.7)
+        url = action.props.get('imageurl', '')
+        objecttype = action.props.get('objectType', '')
+        triggerTrue = action.props.get('triggerTrue', True)
+        if objecttype == "other":
+            objecttype = action.props.get('objectOther','')
+        try:
+            AGtorun = int(action.props.get('ActionGroup',''))
+        except:
+            self.logger.info("Please enter correct Action Group.")
+            return
+
+        if objecttype=='':
+            self.logger.info(u'Please enter a object type')
+            return
+        if AGtorun=='':
+            self.logger.info(u'Please select a Action Group to run')
+            return
+
+        path = self.folderLocationTemp + 'ActionCalledFile_{}'.format(uuid.uuid4())
+        if self.debug2:
+            self.logger.debug(u'checkCamera Download and Run called.'+u' & Number of Active Threads:' + unicode(
+                threading.activeCount()))
+        try:
+             # add timer and move to chunk download...
+            start = t.time()
+            r = requests.get(url, stream=True, timeout=self.serverTimeout)
+            if r.status_code == 200:
+                with open(path, 'wb') as f:
+                    for chunk in r.iter_content(1024):
+                        f.write(chunk)
+                        if t.time()>(start +self.imageTimeout):
+                            self.logger.error(u'checkCameraAG Download Image Taking too long.  Aborted.  ?Network issue')
+                            break
+                    if self.debug2:
+                        self.logger.debug(u'checkCameraAG Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
+            else:
+                 self.logger.debug(u'checkCameraAG Issue Downloading Image. Failed.')
+                 self.logger.debug(u'checkCameraAG Requests: status code:'+unicode(r.status_code)+ u' try one more time..')
+                 self.sleep(1)
+                 start = t.time()
+                 r2 = requests.get(url, stream=True, timeout=self.serverTimeout)
+                 if r2.status_code == 200:
+                     # self.logger.debug(u'Yah Code 200....')
+                     with open(path, 'wb') as f:
+                        for chunk in r2.iter_content(1024):
+                            f.write(chunk)
+                            if t.time()>(start +self.imageTimeout):
+                                self.logger.error(u'checkCameraAG Download Image Taking too long.  Aborted.  ?Network issue')
+                                break
+                        if self.debug2:
+                            self.logger.debug(u'checkCameraAG 2nd Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
+                 else:
+                     self.logger.debug(u'checkCameraAG 2nd attempt failed.  Sorry ended.')
+                     return
+             # Image downloaded
+             # Now send to Deep State skipping any que...
+            if self.useLocal:
+                ipaddress = 'localhost'
+            else:
+                ipaddress = self.ipaddress
+            urltosend = 'http://' + ipaddress + ":" + self.port + "/v1/vision/detection"
+            if self.debug3:
+                self.logger.debug(u'Now Validing Image Data before sending..')
+            if not self.imageVerify(path):
+                self.logger.debug(u'Image Failed Verification.  Skipped.')
+                try:
+                    os.remove(path)
+                except Exception as ex:
+                    self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
+                self.logger.info(u'File Image Date incorrect? Check URL passwords.  Aborted.')
+                return
+            if self.debug3:
+                self.logger.debug(u'Sending to :' + unicode(urltosend))
+            liveurlphoto = open(path, 'rb').read()
+            image = Image.open(path)
+            imagefresh = Image.open(path)
+            bytesImage = os.path.getsize(path)
+
+            if self.debug3:
+                self.logger.debug(u'Size of Current Image:' + unicode(bytesImage))
+            response = requests.post(urltosend, files={"image": liveurlphoto}, timeout=15).json()
+            if self.debug1:
+                self.logger.debug(unicode(response))
+            anyobjectfound = False
+            if response['success'] == True:
+                self.mainProcessedImages = self.mainProcessedImages + 1
+                self.mainBytesProcessed = self.mainBytesProcessed + bytesImage
+                self.mainTimeLastRun = t.strftime('%c')
+                self.deepstateIssue = False
+                self.deepstatetimeouts = 0
+                self.logger.debug(unicode(response['predictions']))
+                objectFound = False
+                for object in response["predictions"]:
+                    label = object["label"]
+                    confidence = float(object['confidence'])
+                     ## if mainconfidence less than completely skip this object
+                    if confidence < float(self.confidenceMain):
+                        if self.debug4:
+                            self.logger.debug(u'Low Confidence for Object:' + unicode(label) + ' so skipping.  Checking next.')
+                        continue
+                    if objecttype==label:
+                        objectFound = True
+                        self.logger.info(u"DeepState Found Object: "+unicode(objecttype)+u' with confidence of :'+unicode(confidence)+ u" within URL:"+unicode(url))
+                ## Need to check here as checking for absence as well, and need to see all predictions
+                if triggerTrue:
+                    if objectFound:
+                        ## run the AG as trigger on found and object has been found
+                        indigo.actionGroup.execute(AGtorun)
+                else:
+                    if objectFound:
+                        self.logger.debug(u'Object present.  Triggering set on objects absence.  Nothing done.')
+                        return
+                    else:
+                        indigo.actionGroup.execute(AGtorun)
+            else:
+                self.logger.info(u"Error from Deepstate for this uRL")
+
+            return
+
+        except requests.exceptions.Timeout:
+            self.logger.debug(u'downloadandaddtoque  has timed out and cannot connect to BI Server.')
+
+        except requests.exceptions.ConnectionError:
+            self.logger.debug(u'downloadandaddtoque connectServer has a Connection Error and cannot connect to BI Server.')
+            self.sleep(5)
+
+        except IOError as ex:
+            self.logger.debug(u'downloadandaddtoque has an IO Error:'+unicode(ex))
+
+        except:
+            self.logger.exception(u'downloadandaddtoque Caught Exception in threadDownloadImage')
+
+
+
     def resetImageTimers(self, action):
         self.logger.debug(u"resetImageTimers Called as Action.")
         self.HTMLimageNo = 0

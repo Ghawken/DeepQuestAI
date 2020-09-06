@@ -211,13 +211,15 @@
 
     <Field id="info1" type="label" fontSize="small">
     <Label>
-        The above setting enables the Plugins 2nd function that of a Html server, serving recently created images for use in Control Pages.
+        The above setting enables the Plugins 2nd function that of a Html server,
+        serving recently created images for use in Control Pages.
 
-        Enables use of http://IndigoIP:4142/car.html or /person.html or ANY deepstateobject.html !
+        Enables use of http://IndigoIP:4142/car.html or /person.html or /tv.html ANY deepstateobject !
         and
         http://IndigoIP:4142/archive/car.html etc as above
 
-        This will show most recent images of the selected, found examples, with every refresh will show next image etc.etc. Action Group within plugin to return to Image 0 - most recent.
+        This will show most recent images of the selected, found examples, with every refresh
+        will show next image etc.etc. Action Group within plugin to return to Image 0 - most recent.
 
         If going from Disabled -> Enabled will need plugin restarted to correctly function.
     </Label>

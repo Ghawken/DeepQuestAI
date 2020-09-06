@@ -5,24 +5,79 @@ This is now the beginning of a plugin for DeepQuestAI or DeepStackAI
 DeepQuestAI is an interesting local AI detection API AI engine.
 https://deepquestai.com/
 
+It runs with a docker container on windows PC (Follow instructions), Docker on mac or within a rpi (ideallly with Neural NCS stick)
+A new beta and open sourcing of it is expected at anytime..
+
 This plugin deeply ties in with BlueIris plugin (where new updated Plugin version is needed), it then uses indigo 7+ Broadcast ability to communicate between plugins.
 
-You need to install and setup DeepStackAI.
+You need to install and setup DeepStackAI.  This will end up with a IP address and port where Deepstack is running.
 Windows, Mac versons available - with local usage for current plugin requirements
 An API number is needed, but can be freely installed.
 
 On my now growing testing works very well.
+Currently (have scanned 2021439 images so far - more than 700gigs!)
 Is all local, which is both positive and negative:
-Positive - have images to use and keep / Cars/ People saved forever if wanted
+Positive - have images to use and keep / Cars/ People saved forever 
+         - Plugin can send images to archive Network directory keeping time stamped photos of all people detected etc.
          - No security issues
          - Seems faster than off site options (like Sentry on BI)
 Negative - need CPU cycles to run the detection
 
+
+Potential Uses
+
+First:
+
+Setup, enable broadcast in BI plugin
+All BI Cameras will send motion alerts to this DeepState Plugin.
+Camera Images will be processed by Deepstate as you request for objects.
+
+What images - well all Motion/Triggered images from the Camera itself.
+eg. When motion detected at Gate Cam -> alerts Deepstate, sends image (or multiple if have supercharge enabled) and processes for objects
+If object found:
+    Can enable a Indigo Trigger - see DeepState Plugin Triggers 
+
+Can create a DeepState Plugin Device for important objects eg. Person or Cars
+If Device exists Plugin will save all images of these objects, archiving to Network storage if enabled/setup
+Device States also have time/last detected, image links etc.
+
+Plus additional:
+
+HTTP Server:
+Creates a very basic image server - showing for control page use the last detected objects
+e.g indigoip:4142/car.html
+Set as refreshingURL in control page will show the last image of car found.
+On refreshing the URL goes backwards in time through all saved images (Non-archived)
+NB:  To save images need to create Indigo Devices for that particularly Object Type!
+
+Third:  (Additional) or can be stand alone
+
+0.5.9 Addition
+
+Action Group 
+Check URL Image and Run Action Group:
+
+Checks a URL Image from BI Camera for example, but can be any URL Image.
+Checks for presence or absence of an object e.g car gone, person present.
+Then runs an action group depending on presence or absence
+
+eg.
+Door closed trigger, run this AG, perhaps with delay
+Checks Camera for Person present - if no person run action group to turn lights off
+
+eg.
+Check Garage for Car - Car absent, run appropriate action groups
+
+
+
+
+
 Setup
 
 1. Install DeepStack, run and activate with your API code on html website.  
+(API code now not needed free for all)
 Start DeepStack Server - recognition only API needed, pick port to run on 
-Plugin Defaults to 7183
+Plugin Defaults to 7188
 
 ##### Plugin Needs Pillow installed/PIL for image control
 ##### pip install pillow
@@ -31,6 +86,8 @@ Plugin Defaults to 7183
 
 Enter the ipaddress of your DeepStateAI API
 Enter the port that you are using.
+
+Follow the detailed instructions in the Plugin Config page
 
 3.  Make sure running BlueIris Plugin version >1.1.12 and above
 Enable within BlueIris plugin, the Broadcast setting
