@@ -1520,12 +1520,14 @@ hair dryer, toothbrush'''
                 if triggerTrue:
                     if objectFound:
                         ## run the AG as trigger on found and object has been found
+                        self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
                         indigo.actionGroup.execute(AGtorun)
                 else:
                     if objectFound:
                         self.logger.debug(u'Object present.  Triggering set on objects absence.  Nothing done.')
                         return
                     else:
+                        self.logger.info(u"Deepstate Found no matching Object, given set to run selected AG on absence of object running now...")
                         indigo.actionGroup.execute(AGtorun)
             else:
                 self.logger.info(u"Error from Deepstate for this uRL")
