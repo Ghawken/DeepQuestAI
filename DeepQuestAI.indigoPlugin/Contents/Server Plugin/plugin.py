@@ -962,6 +962,9 @@ hair dryer, toothbrush'''
     def call_alertURL(self, alerturl, deepStateObject):
         self.logger.debug(u'call_alertURL'+unicode(alerturl))
         try:
+            if alerturl == "":
+                self.logger.debug(u'Skipping Sending Alert URL - doesnt seem to exist')
+                return
             alerturl = alerturl + "DeepStateAlert_"+str(deepStateObject)
             r = requests.get(alerturl, timeout=self.serverTimeout)
             if r.status_code == 200:
@@ -989,6 +992,7 @@ hair dryer, toothbrush'''
     def checkDevices(self, objectname, cameraname, filename, confidence, indigodeviceid):
 
         self.logger.debug('CheckDevices run')
+
         for dev in indigo.devices.itervalues("self.DeepStateObject"):
             if dev.enabled:
                 objectName = dev.pluginProps['objectType']
