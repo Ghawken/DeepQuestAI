@@ -1420,6 +1420,7 @@ hair dryer, toothbrush'''
         secondobjectFound = False
         thirdobjectFound = False
         fourthobjectFound = False
+        fifthobjectFound = False
         confidenceLevel = action.props.get('confidence', 0.7)
         url = action.props.get('imageurl', '')
         objecttype = action.props.get('objectType', '')
