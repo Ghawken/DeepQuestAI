@@ -48,7 +48,7 @@
                     default = ''>
 				<Label>Enter Archive Directory:</Label>
 	</Field>
-  <Field id="spacea2" type="label" fontSize="small" fontColor="black">
+  <Field id="spacea2" type="label" fontSize="small" fontColor="darkgray">
     <Label>
         The Directory for Saved Images and for Archived >24hours images.
         Default Save location is:
@@ -76,7 +76,7 @@
                      >
 				<Label>Enter Temp Directory:</Label>
 	</Field>
-  <Field id="spaceab2" type="label" fontSize="small" fontColor="black" >
+  <Field id="spaceab2" type="label" fontSize="small" fontColor="darkgray" >
     <Label>
         The Directory for Temp Files -
         NB: Contents are deleted at Startup, so don't use a shared folder.
@@ -103,7 +103,7 @@
 				<Title>Generate Main Device</Title>
 				<CallbackMethod>generateMain</CallbackMethod>
 	</Field>
-    <Field id="info56" type="label" fontSize="small">
+    <Field id="info56" type="label" fontSize="small" fontColor="darkgray">
     <Label>
         The above Button Generates the DeepState Main Device
         This reports currently activity and usage of the Deepstate
@@ -116,7 +116,7 @@
                 <Label>Enabled Camera(s)</Label>
                 <List class="indigo.devices" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"/>
             </Field>
-  <Field id="spaceacc2" type="label" fontSize="small" fontColor="black">
+  <Field id="spaceacc2" type="label" fontSize="small" fontColor="darkgray">
     <Label>
         Master list of Enabled Cameras, use control to select multiple.
         Individual triggers,actions etc can select from this list individual camera or cameras
@@ -138,7 +138,7 @@
         <Label>SuperCharge Detection Seconds Apart (secs) </Label>
         <Description>seconds</Description>
              </Field>
-    <Field id="info2" type="label" fontSize="small">
+    <Field id="info2" type="label" fontSize="small" fontColor="darkgray" >
     <Label>
         The above setting SuperCharges Detection, use cautiously depending
         on Cameras enabled.
@@ -158,7 +158,7 @@
         <Label>Time to allow before Aborting Image seconds </Label>
         <Description></Description>
              </Field>
-    <Field id="info33" type="label" fontSize="small">
+    <Field id="info33" type="label" fontSize="small" fontColor="darkgray">
     <Label>
         The above setting is the time between image taken and image being processed
         that is allowed to pass before, skipping, aborting, deleting image
@@ -177,7 +177,7 @@
         <Label>Main Confidence Level 0-1 eg. 0.7 </Label>
         <Description>Ignore everything below this level</Description>
              </Field>
-    <Field id="info3" type="label" fontSize="small">
+    <Field id="info3" type="label" fontSize="small" fontColor="darkgray" >
     <Label>
         The above setting sets confidence level for everything.
         Nothing below this level will be saved/triggered or
@@ -190,7 +190,7 @@
         <Label>Main Image Scale 1-100 </Label>
         <Description>Scale of Image to Use/Save</Description>
              </Field>
-    <Field id="info4" type="label" fontSize="small">
+    <Field id="info4" type="label" fontSize="small" fontColor="darkgray">
     <Label>
         The above setting sets image scale to use for DeepState
         Uses BlueIris to scale image as per setting above
@@ -209,18 +209,18 @@
         <Description>Http Server Port Defaults to 4142</Description>
              </Field>
 
-    <Field id="info1" type="label" fontSize="small">
+    <Field id="info1" type="label" fontSize="small" fontColor="darkgray" >
     <Label>
-        The above setting enables the Plugins 2nd function that of a Html server,
-        serving recently created images for use in Control Pages.
-
-        Enables use of http://IndigoIP:4142/car.html or /person.html or /tv.html ANY deepstateobject !
-        and
+        The above setting enables the Plugins 2nd function that of a Html server,serving recently created images for use in Control Pages.
+        Enables use of http://IndigoIP:4142/car.html or
+        /person.html or
+        /tv.html ANY
+        deepstateobject and
         http://IndigoIP:4142/archive/car.html etc as above
 
-        This will show most recent images of the selected, found examples, with every refresh
-        will show next image etc.etc. Action Group within plugin to return to Image 0 - most recent.
+        This will show most recent images of the selected, found examples, with every refresh will show next image etc.etc.
 
+        Action Group within plugin to return to Image 0 - most recent.
         If going from Disabled -> Enabled will need plugin restarted to correctly function.
     </Label>
     </Field>

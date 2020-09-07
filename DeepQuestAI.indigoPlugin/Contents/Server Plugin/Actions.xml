@@ -34,10 +34,10 @@
             <Option value="person">Person</Option>
                 <Option value="other">Other</Option>
         </List>
-        </Field><Field id="objectOther" type="textfield" visibleBindingId="objectType" visibleBindingValue="other" default="">
+        </Field><Field id="objectOther" type="textfield" visibleBindingId="objectType" visibleBindingValue="other" alwaysUseInDialogHeightCalc="true" default="">
             <Label>Object Type :</Label>
         </Field>
-    <Field id="info33" type="label" fontSize="small" visibleBindingId="objectType" visibleBindingValue="other">
+    <Field id="info33" type="label" fontSize="small" fontColor="darkgray" visibleBindingId="objectType" visibleBindingValue="other" alwaysUseInDialogHeightCalc="true">
     <Label>
         The above setting allows you to manually enter object for device and trigger
         The DeepState options are:
@@ -58,60 +58,55 @@
     </Label>
     </Field>
 
-        <Field id="sep3" type="separator"/>
+        <Field id="sep3" type="separator" alwaysUseInDialogHeightCalc="true" />
     <Field id="confidence"
 				   type="textfield"
 				   tooltip="Enter lowest confidence to be trigger, from 0 to 1"
-				   default="0.7" >
+				   fontSize="small"
+           default="0.7" >
 				<Label>Confidence level above which to be triggered 0-1 eg. 0.6:</Label>
 			</Field>
-         <Field id="imageurl" type="textfield">
+         <Field id="imageurl" type="textfield" alwaysUseInDialogHeightCalc="true">
              <Label>Image URL :</Label>
          </Field>
 
-                <Field type="checkbox" id="anotherurl1" defaultValue="false">
+                <Field type="checkbox" id="anotherurl1" defaultValue="false" alwaysUseInDialogHeightCalc="true">
         <Label>Enable another URL to Check:</Label>
     </Field>
-            <Field id="imageurl2" type="textfield" visibleBindingId="anotherurl1" visibleBindingValue="true" >
+            <Field id="imageurl2" type="textfield" visibleBindingId="anotherurl1" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
              <Label>Image URL #2 :</Label>
          </Field>
 
-                <Field type="checkbox" id="anotherurl2" defaultValue="false" visibleBindingId="anotherurl1" visibleBindingValue="true" >
+                <Field type="checkbox" id="anotherurl2" defaultValue="false" visibleBindingId="anotherurl1" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
         <Label>Enable another URL to Check:</Label>
     </Field>
-            <Field id="imageurl3" type="textfield" visibleBindingId="anotherurl2" visibleBindingValue="true" >
+            <Field id="imageurl3" type="textfield" visibleBindingId="anotherurl2" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
              <Label>Image URL #3 :</Label>
          </Field>
-<Field type="checkbox" id="anotherurl3" defaultValue="false"  visibleBindingId="anotherurl2" visibleBindingValue="true">
+<Field type="checkbox" id="anotherurl3" defaultValue="false"  visibleBindingId="anotherurl2" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
         <Label>Enable another URL to Check:</Label>
     </Field>
-            <Field id="imageurl4" type="textfield" visibleBindingId="anotherurl3" visibleBindingValue="true" >
+            <Field id="imageurl4" type="textfield" visibleBindingId="anotherurl3" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
              <Label>Image URL #4 :</Label>
          </Field>
-<Field type="checkbox" id="anotherurl4" defaultValue="false"  visibleBindingId="anotherurl3" visibleBindingValue="true">
+<Field type="checkbox" id="anotherurl4" defaultValue="false"  visibleBindingId="anotherurl3" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
         <Label>Enable another URL to Check:</Label>
     </Field>
-            <Field id="imageurl5" type="textfield" visibleBindingId="anotherurl4" visibleBindingValue="true" >
+            <Field id="imageurl5" type="textfield" visibleBindingId="anotherurl4" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
              <Label>Image URL #5 :</Label>
          </Field>
-
-
-    <Field id="sep23ab5" type="separator" visibleBindingId="anotherurl1" visibleBindingValue="true" />
-            <Field id="labeldesc" type="label" visibleBindingId="anotherurl1" visibleBindingValue="true" >
-             <Label >
-                 These will be checked sequentially with the same conditions
-                 eg. All have to have no object, or Any with object for
-                 triggering
+           <Field id="labeldesc" type="label" visibleBindingId="anotherurl1" fontColor="darkgray" fontSize="small" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+             <Label >These will be checked sequentially with the same conditions eg. All have to have no object, or Any with object fortriggering
              </Label>
          </Field>
 
-     <Field id="sep23a2b5aa" type="separator" />
-                <Field id="ActionGroupFound" type="menu" default="None" >
+     <Field id="sep23a2b5aa" type="separator" alwaysUseInDialogHeightCalc="true" />
+                <Field id="ActionGroupFound" type="menu" default="None" alwaysUseInDialogHeightCalc="true">
 				<Label>Action Group to Run if Object FOUND:</Label>
                <List class="self" method="actionsToList" dynamicReload="true" />
 			</Field>
-            <Field id="sep23a2b5aae" type="separator" />
-                <Field id="ActionGroupNotFound" type="menu" default="0" >
+            <Field id="sep23a2b5aae" type="separator" alwaysUseInDialogHeightCalc="true"/>
+                <Field id="ActionGroupNotFound" type="menu" default="0" alwaysUseInDialogHeightCalc="true">
 				<Label>Action Group to Run if Object NOT Found:</Label>
                <List class="self" method="actionsToList" dynamicReload="true" />
 			</Field>
