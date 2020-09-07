@@ -1412,10 +1412,14 @@ hair dryer, toothbrush'''
             return False
 
 
-    ## Actions.xml
     def checkCameraAG(self,action):
         self.logger.debug(u'checkCameraAG called')
         self.logger.debug(unicode(action))
+        objectFound = False
+        firstobjectFound = False
+        secondobjectFound = False
+        thirdobjectFound = False
+        fourthobjectFound = False
         confidenceLevel = action.props.get('confidence', 0.7)
         url = action.props.get('imageurl', '')
         objecttype = action.props.get('objectType', '')
@@ -1425,19 +1429,136 @@ hair dryer, toothbrush'''
         try:
             AGtorun = int(action.props.get('ActionGroup',''))
         except:
-            self.logger.info("Please enter correct Action Group.")
+            self.logger.info(u"Please enter correct Action Group.")
             return
-
         if objecttype=='':
             self.logger.info(u'Please enter a object type')
             return
         if AGtorun=='':
             self.logger.info(u'Please select a Action Group to run')
             return
+        if url== '':
+            self.logger.info(u'Please enter a correct URL')
+        self.logger.debug(u'checking 1st Url')
+        firsturl = self.checkCameraSingleUrls(url, confidenceLevel,objecttype)
+
+        if firsturl == "error":
+            self.logger.info(u"Error with request. Check Settings.")
+            return
+        elif firsturl =="objectFound":
+            firstobjectFound = True
+        elif firsturl =="noobjectFound":
+            firstobjectFound = False
+        # if triggerTrue can check agfter each URL
+        if triggerTrue:
+            if firstobjectFound:
+                ## run the AG as trigger on found and object has been found
+                self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
+                indigo.actionGroup.execute(AGtorun)
+                return
+
+        anotherurl1 = action.props.get('anotherurl1', False)
+        if anotherurl1:
+            url2 = action.props.get('imageurl2', '')
+            if url2 == '':
+                self.logger.info("Please enter 2nd URL to check or uncheck box")
+                return
+            secondurl = self.checkCameraSingleUrls(url2, confidenceLevel, objecttype)
+            if secondurl == "error":
+                self.logger.info(u"Error with request. Check Settings.")
+                return
+            elif secondurl =="objectFound":
+                secondobjectFound = True
+            elif secondurl =="noobjectFound":
+                secondobjectFound = False
+            # if triggerTrue can check agfter each URL
+            if triggerTrue:
+                if secondobjectFound:
+                    ## run the AG as trigger on found and object has been found
+                    self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
+                    indigo.actionGroup.execute(AGtorun)
+                    return
+
+        anotherurl2 = action.props.get('anotherurl2', False)
+        if anotherurl2:
+            url3 = action.props.get('imageurl3', '')
+            if url3 == '':
+                self.logger.info("Please enter 2nd URL to check or uncheck box")
+                return
+            thirdurl = self.checkCameraSingleUrls(url3, confidenceLevel, objecttype)
+            if thirdurl == "error":
+                self.logger.info(u"Error with request. Check Settings.")
+                return
+            elif thirdurl =="objectFound":
+                thirdobjectFound = True
+            elif thirdurl =="noobjectFound":
+                thirdobjectFound = False
+            # if triggerTrue can check agfter each URL
+            if triggerTrue:
+                if thirdobjectFound:
+                    ## run the AG as trigger on found and object has been found
+                    self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
+                    indigo.actionGroup.execute(AGtorun)
+                    return
+
+        anotherurl3 = action.props.get('anotherurl3', False)
+        if anotherurl3:
+            url4 = action.props.get('imageurl4', '')
+            if url4 == '':
+                self.logger.info("Please enter 2nd URL to check or uncheck box")
+                return
+            fourthurl = self.checkCameraSingleUrls(url4, confidenceLevel, objecttype)
+            if fourthurl == "error":
+                self.logger.info(u"Error with request. Check Settings.")
+                return
+            elif fourthurl == "objectFound":
+                fourthobjectFound = True
+            elif fourthurl == "noobjectFound":
+                fourthobjectFound = False
+            # if triggerTrue can check agfter each URL
+            if triggerTrue:
+                if fourthobjectFound:
+                    ## run the AG as trigger on found and object has been found
+                    self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
+                    indigo.actionGroup.execute(AGtorun)
+                    return
+        if triggerTrue:
+            if not firstobjectFound and not secondobjectFound and not thirdobjectFound and not fourthobjectFound:
+                self.logger.info( u"Deepstate Found no matching Object, no Action Group Run")
+        if not triggerTrue:
+            if firstobjectFound or secondobjectFound or thirdobjectFound or fourthobjectFound:
+                self.logger.info(u'Object present.  Triggering set on objects absence.  Nothing done.')
+                return
+            elif not firstobjectFound and not secondobjectFound and not thirdobjectFound and not fourthobjectFound:
+                self.logger.info(  u"Deepstate Found no matching Object, given set to run selected AG on absence of object running now...")
+                indigo.actionGroup.execute(AGtorun)
+                return
+
+        return
+
+    ## Actions.xml
+    def checkCameraSingleUrls(self,url, confidenceLevel, objecttype ):
+        self.logger.debug(u'checkCameraAG called for Url:'+unicode(url)+u" and object "+unicode(objecttype))
+       # self.logger.debug(unicode(action))
+       # confidenceLevel = action.props.get('confidence', 0.7)
+       # url = action.props.get('imageurl', '')
+       # objecttype = action.props.get('objectType', '')
+       # triggerTrue = action.props.get('triggerTrue', True)
+       # if objecttype == "other":
+        #    objecttype = action.props.get('objectOther','')
+        #try:
+         #   AGtorun = int(action.props.get('ActionGroup',''))
+        #except:
+         #   self.logger.info("Please enter correct Action Group.")
+          #  return
+
+        if objecttype=='':
+            self.logger.info(u'Please enter a object type')
+            return "error"
 
         path = self.folderLocationTemp + 'ActionCalledFile_{}'.format(uuid.uuid4())
         if self.debug2:
-            self.logger.debug(u'checkCamera Download and Run called.'+u' & Number of Active Threads:' + unicode(
+            self.logger.debug(u'checkCameraSingleURL Download and Run called.'+u' & Number of Active Threads:' + unicode(
                 threading.activeCount()))
         try:
              # add timer and move to chunk download...
@@ -1448,13 +1569,13 @@ hair dryer, toothbrush'''
                     for chunk in r.iter_content(1024):
                         f.write(chunk)
                         if t.time()>(start +self.imageTimeout):
-                            self.logger.error(u'checkCameraAG Download Image Taking too long.  Aborted.  ?Network issue')
+                            self.logger.error(u'checkCameraSingleURL Download Image Taking too long.  Aborted.  ?Network issue')
                             break
                     if self.debug2:
-                        self.logger.debug(u'checkCameraAG Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
+                        self.logger.debug(u'checkCameraSingleURL Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
             else:
-                 self.logger.debug(u'checkCameraAG Issue Downloading Image. Failed.')
-                 self.logger.debug(u'checkCameraAG Requests: status code:'+unicode(r.status_code)+ u' try one more time..')
+                 self.logger.debug(u'checkCameraSingleURL Issue Downloading Image. Failed.')
+                 self.logger.debug(u'checkCameraSingleURL Requests: status code:'+unicode(r.status_code)+ u' try one more time..')
                  self.sleep(1)
                  start = t.time()
                  r2 = requests.get(url, stream=True, timeout=self.serverTimeout)
@@ -1464,13 +1585,13 @@ hair dryer, toothbrush'''
                         for chunk in r2.iter_content(1024):
                             f.write(chunk)
                             if t.time()>(start +self.imageTimeout):
-                                self.logger.error(u'checkCameraAG Download Image Taking too long.  Aborted.  ?Network issue')
+                                self.logger.error(u'checkCameraSingleURL Download Image Taking too long.  Aborted.  ?Network issue')
                                 break
                         if self.debug2:
-                            self.logger.debug(u'checkCameraAG 2nd Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
+                            self.logger.debug(u'checkCameraSingleURL 2nd Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
                  else:
-                     self.logger.debug(u'checkCameraAG 2nd attempt failed.  Sorry ended.')
-                     return
+                     self.logger.debug(u'checkCameraSingleURL 2nd attempt failed.  Sorry ended.')
+                     return "error"
              # Image downloaded
              # Now send to Deep State skipping any que...
             if self.useLocal:
@@ -1481,18 +1602,17 @@ hair dryer, toothbrush'''
             if self.debug3:
                 self.logger.debug(u'Now Validing Image Data before sending..')
             if not self.imageVerify(path):
-                self.logger.debug(u'Image Failed Verification.  Skipped.')
+                self.logger.info(u'URL Image Failed Verification.  Error. Skipped.')
                 try:
                     os.remove(path)
                 except Exception as ex:
                     self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
                 self.logger.info(u'File Image Date incorrect? Check URL passwords.  Aborted.')
-                return
+                return "error"
             if self.debug3:
                 self.logger.debug(u'Sending to :' + unicode(urltosend))
             liveurlphoto = open(path, 'rb').read()
-            image = Image.open(path)
-            imagefresh = Image.open(path)
+           ##     imagefresh = Image.open(path)
             bytesImage = os.path.getsize(path)
 
             if self.debug3:
@@ -1520,37 +1640,29 @@ hair dryer, toothbrush'''
                     if objecttype==label:
                         objectFound = True
                         self.logger.info(u"DeepState Found Object: "+unicode(objecttype)+u' with confidence of :'+unicode(confidence)+ u" within URL:"+unicode(url))
+                        return "objectFound"
                 ## Need to check here as checking for absence as well, and need to see all predictions
-                if triggerTrue:
-                    if objectFound:
-                        ## run the AG as trigger on found and object has been found
-                        self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
-                        indigo.actionGroup.execute(AGtorun)
-                else:
-                    if objectFound:
-                        self.logger.debug(u'Object present.  Triggering set on objects absence.  Nothing done.')
-                        return
-                    else:
-                        self.logger.info(u"Deepstate Found no matching Object, given set to run selected AG on absence of object running now...")
-                        indigo.actionGroup.execute(AGtorun)
+                # No object found
+                return "noobjectFound"
             else:
                 self.logger.info(u"Error from Deepstate for this uRL")
-
-            return
+                return 'error'
 
         except requests.exceptions.Timeout:
             self.logger.debug(u'downloadandaddtoque  has timed out and cannot connect to BI Server.')
+            return 'error'
 
         except requests.exceptions.ConnectionError:
-            self.logger.debug(u'downloadandaddtoque connectServer has a Connection Error and cannot connect to BI Server.')
-            self.sleep(5)
+            self.logger.debug(u'downloadandaddtoque connectServer has a Connection Error and cannot connect.')
+            return 'error'
 
         except IOError as ex:
             self.logger.debug(u'downloadandaddtoque has an IO Error:'+unicode(ex))
+            return 'error'
 
         except:
             self.logger.exception(u'downloadandaddtoque Caught Exception in threadDownloadImage')
-
+            return 'error'
 
 
     def resetImageTimers(self, action):

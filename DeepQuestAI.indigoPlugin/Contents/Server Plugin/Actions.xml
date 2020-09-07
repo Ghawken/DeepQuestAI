@@ -67,17 +67,53 @@
 			</Field>
          <Field id="imageurl" type="textfield">
              <Label>Image URL :</Label>
-             <Description>
-                 eg.  http://username:password@192.168.1.20/image/Car
-                 This plugin has no access to BI passwords/username need to entry as URL
+         </Field>
+
+                <Field type="checkbox" id="anotherurl1" defaultValue="false">
+        <Label>Enable another URL to Check:</Label>
+    </Field>
+            <Field id="imageurl2" type="textfield" visibleBindingId="anotherurl1" visibleBindingValue="true" >
+             <Label>Image URL #2 :</Label>
+         </Field>
+
+                <Field type="checkbox" id="anotherurl2" defaultValue="false" visibleBindingId="anotherurl1" visibleBindingValue="true" >
+        <Label>Enable another URL to Check:</Label>
+    </Field>
+            <Field id="imageurl3" type="textfield" visibleBindingId="anotherurl2" visibleBindingValue="true" >
+             <Label>Image URL #3 :</Label>
+         </Field>
+<Field type="checkbox" id="anotherurl3" defaultValue="false"  visibleBindingId="anotherurl2" visibleBindingValue="true">
+        <Label>Enable another URL to Check:</Label>
+    </Field>
+            <Field id="imageurl4" type="textfield" visibleBindingId="anotherurl3" visibleBindingValue="true" >
+             <Label>Image URL #4 :</Label>
+             <Description >
+                 These will be checked sequentially with the same conditions
+                 eg. All have to have no object, or Any with object for
+                 triggering
              </Description>
          </Field>
+
+    <Field id="sep23ab5" type="separator" visibleBindingId="anotherurl1" visibleBindingValue="true" />
+            <Field id="labeldesc" type="label" visibleBindingId="anotherurl1" visibleBindingValue="true" >
+             <Label >
+                 These will be checked sequentially with the same conditions
+                 eg. All have to have no object, or Any with object for
+                 triggering
+             </Label>
+         </Field>
+    <Field id="sep23a2b5" type="separator" />
              <Field type="checkbox" id="triggerTrue" defaultValue="true">
-        <Label>Trigger if Item Found:</Label>
-        <Description>(Checked == will run AG if item present, unchecked will run if no item found)</Description>
+        <Label>
+            Trigger if Item Found:
+
+            Checked   == will run AG if item present
+            unchecked == will run if no item found
+ </Label>
     </Field>
+     <Field id="sep23a2b5aa" type="separator" />
                 <Field id="ActionGroup" type="menu" >
-				<Label>Action Group:</Label>
+				<Label>Action Group to Run:</Label>
 				<List class="indigo.actionGroups"/>
 			</Field>
     </ConfigUI>
