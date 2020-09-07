@@ -87,12 +87,14 @@
     </Field>
             <Field id="imageurl4" type="textfield" visibleBindingId="anotherurl3" visibleBindingValue="true" >
              <Label>Image URL #4 :</Label>
-             <Description >
-                 These will be checked sequentially with the same conditions
-                 eg. All have to have no object, or Any with object for
-                 triggering
-             </Description>
          </Field>
+<Field type="checkbox" id="anotherurl4" defaultValue="false"  visibleBindingId="anotherurl3" visibleBindingValue="true">
+        <Label>Enable another URL to Check:</Label>
+    </Field>
+            <Field id="imageurl5" type="textfield" visibleBindingId="anotherurl4" visibleBindingValue="true" >
+             <Label>Image URL #5 :</Label>
+         </Field>
+
 
     <Field id="sep23ab5" type="separator" visibleBindingId="anotherurl1" visibleBindingValue="true" />
             <Field id="labeldesc" type="label" visibleBindingId="anotherurl1" visibleBindingValue="true" >
@@ -102,20 +104,18 @@
                  triggering
              </Label>
          </Field>
-    <Field id="sep23a2b5" type="separator" />
-             <Field type="checkbox" id="triggerTrue" defaultValue="true">
-        <Label>
-            Trigger if Item Found:
 
-            Checked   == will run AG if item present
-            unchecked == will run if no item found
- </Label>
-    </Field>
      <Field id="sep23a2b5aa" type="separator" />
-                <Field id="ActionGroup" type="menu" >
-				<Label>Action Group to Run:</Label>
-				<List class="indigo.actionGroups"/>
+                <Field id="ActionGroupFound" type="menu" default="None" >
+				<Label>Action Group to Run if Object FOUND:</Label>
+               <List class="self" method="actionsToList" dynamicReload="true" />
 			</Field>
+            <Field id="sep23a2b5aae" type="separator" />
+                <Field id="ActionGroupNotFound" type="menu" default="0" >
+				<Label>Action Group to Run if Object NOT Found:</Label>
+               <List class="self" method="actionsToList" dynamicReload="true" />
+			</Field>
+ <Field id="sep23a2b25aae" type="separator" />
     </ConfigUI>
 
     </Action>

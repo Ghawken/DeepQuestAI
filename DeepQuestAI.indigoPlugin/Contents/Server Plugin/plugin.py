@@ -1423,19 +1423,17 @@ hair dryer, toothbrush'''
         confidenceLevel = action.props.get('confidence', 0.7)
         url = action.props.get('imageurl', '')
         objecttype = action.props.get('objectType', '')
-        triggerTrue = action.props.get('triggerTrue', True)
+
         if objecttype == "other":
             objecttype = action.props.get('objectOther','')
         try:
-            AGtorun = int(action.props.get('ActionGroup',''))
+            AGtorunFound = int(action.props.get('ActionGroupFound',''))
+            AGtorunNotFound = int(action.props.get('ActionGroupNotFound',''))
         except:
             self.logger.info(u"Please enter correct Action Group.")
             return
         if objecttype=='':
             self.logger.info(u'Please enter a object type')
-            return
-        if AGtorun=='':
-            self.logger.info(u'Please select a Action Group to run')
             return
         if url== '':
             self.logger.info(u'Please enter a correct URL')
@@ -1443,19 +1441,22 @@ hair dryer, toothbrush'''
         firsturl = self.checkCameraSingleUrls(url, confidenceLevel,objecttype)
 
         if firsturl == "error":
-            self.logger.info(u"Error with request. Check Settings.")
+            self.logger.info(u"Error with 1st URL request. Check Settings. URL:"+unicode(url))
             return
         elif firsturl =="objectFound":
             firstobjectFound = True
         elif firsturl =="noobjectFound":
             firstobjectFound = False
         # if triggerTrue can check agfter each URL
-        if triggerTrue:
-            if firstobjectFound:
-                ## run the AG as trigger on found and object has been found
-                self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
-                indigo.actionGroup.execute(AGtorun)
-                return
+
+        if firstobjectFound:
+            ## run the AG as trigger on found and object has been found
+            self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
+            if AGtorunFound != 0:
+                indigo.actionGroup.execute(AGtorunFound)
+            else:
+                self.logger.info(u"Running Selected Action Group: None.")
+            return
 
         anotherurl1 = action.props.get('anotherurl1', False)
         if anotherurl1:
@@ -1465,19 +1466,21 @@ hair dryer, toothbrush'''
                 return
             secondurl = self.checkCameraSingleUrls(url2, confidenceLevel, objecttype)
             if secondurl == "error":
-                self.logger.info(u"Error with request. Check Settings.")
+                self.logger.info(u"Error with 2nd URL request. Check Settings. URL:"+unicode(url2))
                 return
             elif secondurl =="objectFound":
                 secondobjectFound = True
             elif secondurl =="noobjectFound":
                 secondobjectFound = False
             # if triggerTrue can check agfter each URL
-            if triggerTrue:
-                if secondobjectFound:
-                    ## run the AG as trigger on found and object has been found
-                    self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
-                    indigo.actionGroup.execute(AGtorun)
-                    return
+            if secondobjectFound:
+                ## run the AG as trigger on found and object has been found
+                self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
+                if AGtorunFound != 0:
+                    indigo.actionGroup.execute(AGtorunFound)
+                else:
+                    self.logger.info(u"Running Selected Action Group: None.")
+                return
 
         anotherurl2 = action.props.get('anotherurl2', False)
         if anotherurl2:
@@ -1487,19 +1490,21 @@ hair dryer, toothbrush'''
                 return
             thirdurl = self.checkCameraSingleUrls(url3, confidenceLevel, objecttype)
             if thirdurl == "error":
-                self.logger.info(u"Error with request. Check Settings.")
+                self.logger.info(u"Error with 3rd URL request. Check Settings. URL:"+unicode(url3))
                 return
             elif thirdurl =="objectFound":
                 thirdobjectFound = True
             elif thirdurl =="noobjectFound":
                 thirdobjectFound = False
             # if triggerTrue can check agfter each URL
-            if triggerTrue:
-                if thirdobjectFound:
-                    ## run the AG as trigger on found and object has been found
-                    self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
-                    indigo.actionGroup.execute(AGtorun)
-                    return
+            if thirdobjectFound:
+                ## run the AG as trigger on found and object has been found
+                self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
+                if AGtorunFound != 0:
+                    indigo.actionGroup.execute(AGtorunFound)
+                else:
+                    self.logger.info(u"Running Selected Action Group: None.")
+                return
 
         anotherurl3 = action.props.get('anotherurl3', False)
         if anotherurl3:
@@ -1509,32 +1514,69 @@ hair dryer, toothbrush'''
                 return
             fourthurl = self.checkCameraSingleUrls(url4, confidenceLevel, objecttype)
             if fourthurl == "error":
-                self.logger.info(u"Error with request. Check Settings.")
+                self.logger.info(u"Error with 4th URL request. Check Settings. URL:"+unicode(url4))
                 return
             elif fourthurl == "objectFound":
                 fourthobjectFound = True
             elif fourthurl == "noobjectFound":
                 fourthobjectFound = False
             # if triggerTrue can check agfter each URL
-            if triggerTrue:
-                if fourthobjectFound:
-                    ## run the AG as trigger on found and object has been found
-                    self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
-                    indigo.actionGroup.execute(AGtorun)
-                    return
-        if triggerTrue:
-            if not firstobjectFound and not secondobjectFound and not thirdobjectFound and not fourthobjectFound:
-                self.logger.info( u"Deepstate Found no matching Object, no Action Group Run")
-        if not triggerTrue:
-            if firstobjectFound or secondobjectFound or thirdobjectFound or fourthobjectFound:
-                self.logger.info(u'Object present.  Triggering set on objects absence.  Nothing done.')
-                return
-            elif not firstobjectFound and not secondobjectFound and not thirdobjectFound and not fourthobjectFound:
-                self.logger.info(  u"Deepstate Found no matching Object, given set to run selected AG on absence of object running now...")
-                indigo.actionGroup.execute(AGtorun)
+            if fourthobjectFound:
+                ## run the AG as trigger on found and object has been found
+                self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
+                if AGtorunFound != 0:
+                    indigo.actionGroup.execute(AGtorunFound)
+                else:
+                    self.logger.info(u"Running Selected Action Group: None.")
                 return
 
+        anotherurl4 = action.props.get('anotherurl4', False)
+        if anotherurl4:
+            url5 = action.props.get('imageurl5', '')
+            if url5 == '':
+                self.logger.info("Please enter 5th URL to check or uncheck box")
+                return
+            fifthurl = self.checkCameraSingleUrls(url5, confidenceLevel, objecttype)
+            if fifthurl == "error":
+                self.logger.info(u"Error with 5th URL request. Check Settings. URL:"+unicode(url5))
+                return
+            elif fifthurl == "objectFound":
+                fifthobjectFound = True
+            elif fifthurl == "noobjectFound":
+                fifthobjectFound = False
+            # if triggerTrue can check agfter each URL
+            if fifthobjectFound:
+                ## run the AG as trigger on found and object has been found
+                self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
+                if AGtorunFound != 0:
+                    indigo.actionGroup.execute(AGtorunFound)
+                else:
+                    self.logger.info(u"Running Selected Action Group: None.")
+                return
+
+
+        if not firstobjectFound and not secondobjectFound and not thirdobjectFound and not fourthobjectFound and not fifthobjectFound:
+            self.logger.info(  u"Deepstate Found no matching Object in Url(s), Running selected Action Group when Not Found Object")
+            if AGtorunNotFound != 0:
+                indigo.actionGroup.execute(AGtorunNotFound)
+            else:
+                self.logger.info(u"Running Selected Action Group: None.")
+            return
+
+
         return
+
+        ########################################
+        # This method is called to generate a list of actions.
+        ########################################
+    def actionsToList(self, filter="", valuesDict=None, typeId="", targetId=0):
+        # Set a default with id 0
+        # Iterates through the action list
+        actionList = [(0, 'None')]
+        for action in indigo.actionGroups:
+            actionList.append((action.id, action.name))
+        actionList.append((0, 'None'))
+        return actionList
 
     ## Actions.xml
     def checkCameraSingleUrls(self,url, confidenceLevel, objecttype ):
