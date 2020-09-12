@@ -137,6 +137,10 @@ hair dryer, toothbrush'''
         self.useLocal = self.pluginPrefs.get('useLocal', False)
         self.ipaddress = self.pluginPrefs.get('ipaddress', '')
         self.superCharge = self.pluginPrefs.get('superCharge', False)
+        ## for 2nd DeepState Instance
+        self.DeepState2nd = self.pluginPrefs.get('DeepState2nd', False)
+        self.ipaddress2 = self.pluginPrefs.get('ipaddress2', '')
+        self.port2 = self.pluginPrefs.get('port2', '7188')
 
         self.useRAMdisk = self.pluginPrefs.get('useRAMdisk',False)
 
@@ -272,7 +276,11 @@ hair dryer, toothbrush'''
             #self.logger.error(unicode(valuesDict))
             self.useLocal = valuesDict.get('useLocal', False)
             self.ipaddress = valuesDict.get('ipaddress', '')
+            self.ipaddress2 = valuesDict.get('ipaddress2', '')
+            self.port2 = valuesDict.get('port2', '7188')
+
             self.superCharge = valuesDict.get('superCharge', False)
+            self.DeepState2nd = valuesDict.get('DeepState2nd', False)
 
             if valuesDict.get('useRAMdisk',False) == False and self.useRAMdisk:
                 self.pluginneedsrestart = True
@@ -1566,6 +1574,186 @@ hair dryer, toothbrush'''
 
 
         return
+####
+    def getBIimagepath(self, deviceid, BIserver, BIport, BIusername, BIpassword):
+        self.logger.debug("Creating BI Image Path")
+        try:
+            device = indigo.devices[int(deviceid)]
+            camshortName = device.states['optionValue']
+            self.logger.debug('Camera Short Name:'+unicode(camshortName))
+            endurl = "http://"+str(BIusername)+":"+str(BIpassword)+"@"+str(BIserver)+":"+str(BIport)+"/image/"+str(camshortName)
+            self.logger.debug("Sending to "+unicode(endurl))
+            return endurl
+
+        except:
+            self.logger.exception("Exception Caught:")
+            return ''
+
+    def checkBICameraAG(self, action):
+        self.logger.debug(u'checkBICameraAG called')
+        self.logger.debug(unicode(action))
+        objectFound = False
+        firstobjectFound = False
+        secondobjectFound = False
+        thirdobjectFound = False
+        fourthobjectFound = False
+        fifthobjectFound = False
+        confidenceLevel = action.props.get('confidence', 0.7)
+        url = action.props.get('imageurl', '')
+        objecttype = action.props.get('objectType', '')
+        BIusername = action.props.get('BIusername','')
+        BIpassword = action.props.get('BIpassword', '')
+        BIserverip = action.props.get('serverip','')
+        BIport = action.props.get('serverport', 80)
+
+        if objecttype == "other":
+            objecttype = action.props.get('objectOther', '')
+        try:
+            AGtorunFound = int(action.props.get('ActionGroupFound', ''))
+            AGtorunNotFound = int(action.props.get('ActionGroupNotFound', ''))
+        except:
+            self.logger.info(u"Please enter correct Action Group.")
+            return
+        if objecttype == '':
+            self.logger.info(u'Please enter a object type')
+            return
+        if url == '':
+            self.logger.info(u'Please enter a correct URL')
+        self.logger.debug(u'checking 1st Device')
+
+        ## create BI image from Indigodomo device ID and username/password given..
+        url = self.getBIimagepath(url, BIserverip, BIport, BIusername, BIpassword)
+
+        firsturl = self.checkCameraSingleUrls(url, confidenceLevel, objecttype)
+
+        if firsturl == "error":
+            self.logger.info(u"Error with 1st URL request. Check Settings. URL:" + unicode(url))
+            return
+        elif firsturl == "objectFound":
+            firstobjectFound = True
+        elif firsturl == "noobjectFound":
+            firstobjectFound = False
+        # if triggerTrue can check agfter each URL
+
+        if firstobjectFound:
+            ## run the AG as trigger on found and object has been found
+            self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
+            if AGtorunFound != 0:
+                indigo.actionGroup.execute(AGtorunFound)
+            else:
+                self.logger.info(u"Running Selected Action Group: None.")
+            return
+
+        anotherurl1 = action.props.get('anotherurl1', False)
+        if anotherurl1:
+            url2 = action.props.get('imageurl2', '')
+            url2 = self.getBIimagepath(url2, BIserverip, BIport, BIusername, BIpassword)
+            if url2 == '':
+                self.logger.info("Please enter 2nd URL to check or uncheck box")
+                return
+            secondurl = self.checkCameraSingleUrls(url2, confidenceLevel, objecttype)
+            if secondurl == "error":
+                self.logger.info(u"Error with 2nd URL request. Check Settings. URL:" + unicode(url2))
+                return
+            elif secondurl == "objectFound":
+                secondobjectFound = True
+            elif secondurl == "noobjectFound":
+                secondobjectFound = False
+            # if triggerTrue can check agfter each URL
+            if secondobjectFound:
+                ## run the AG as trigger on found and object has been found
+                self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
+                if AGtorunFound != 0:
+                    indigo.actionGroup.execute(AGtorunFound)
+                else:
+                    self.logger.info(u"Running Selected Action Group: None.")
+                return
+
+        anotherurl2 = action.props.get('anotherurl2', False)
+        if anotherurl2:
+            url3 = action.props.get('imageurl3', '')
+            url3 = self.getBIimagepath(url3, BIserverip, BIport, BIusername, BIpassword)
+            if url3 == '':
+                self.logger.info("Please enter 2nd URL to check or uncheck box")
+                return
+            thirdurl = self.checkCameraSingleUrls(url3, confidenceLevel, objecttype)
+            if thirdurl == "error":
+                self.logger.info(u"Error with 3rd URL request. Check Settings. URL:" + unicode(url3))
+                return
+            elif thirdurl == "objectFound":
+                thirdobjectFound = True
+            elif thirdurl == "noobjectFound":
+                thirdobjectFound = False
+            # if triggerTrue can check agfter each URL
+            if thirdobjectFound:
+                ## run the AG as trigger on found and object has been found
+                self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
+                if AGtorunFound != 0:
+                    indigo.actionGroup.execute(AGtorunFound)
+                else:
+                    self.logger.info(u"Running Selected Action Group: None.")
+                return
+
+        anotherurl3 = action.props.get('anotherurl3', False)
+        if anotherurl3:
+            url4 = action.props.get('imageurl4', '')
+            url4 = self.getBIimagepath(url4, BIserverip, BIport, BIusername, BIpassword)
+            if url4 == '':
+                self.logger.info("Please enter 2nd URL to check or uncheck box")
+                return
+            fourthurl = self.checkCameraSingleUrls(url4, confidenceLevel, objecttype)
+            if fourthurl == "error":
+                self.logger.info(u"Error with 4th URL request. Check Settings. URL:" + unicode(url4))
+                return
+            elif fourthurl == "objectFound":
+                fourthobjectFound = True
+            elif fourthurl == "noobjectFound":
+                fourthobjectFound = False
+            # if triggerTrue can check agfter each URL
+            if fourthobjectFound:
+                ## run the AG as trigger on found and object has been found
+                self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
+                if AGtorunFound != 0:
+                    indigo.actionGroup.execute(AGtorunFound)
+                else:
+                    self.logger.info(u"Running Selected Action Group: None.")
+                return
+
+        anotherurl4 = action.props.get('anotherurl4', False)
+        if anotherurl4:
+            url5 = action.props.get('imageurl5', '')
+            url5 = self.getBIimagepath(url5, BIserverip, BIport, BIusername, BIpassword)
+            if url5 == '':
+                self.logger.info("Please enter 5th URL to check or uncheck box")
+                return
+            fifthurl = self.checkCameraSingleUrls(url5, confidenceLevel, objecttype)
+            if fifthurl == "error":
+                self.logger.info(u"Error with 5th URL request. Check Settings. URL:" + unicode(url5))
+                return
+            elif fifthurl == "objectFound":
+                fifthobjectFound = True
+            elif fifthurl == "noobjectFound":
+                fifthobjectFound = False
+            # if triggerTrue can check agfter each URL
+            if fifthobjectFound:
+                ## run the AG as trigger on found and object has been found
+                self.logger.info(u"DeepState found Matching Object.  Running selected Action Group.")
+                if AGtorunFound != 0:
+                    indigo.actionGroup.execute(AGtorunFound)
+                else:
+                    self.logger.info(u"Running Selected Action Group: None.")
+                return
+
+        if not firstobjectFound and not secondobjectFound and not thirdobjectFound and not fourthobjectFound and not fifthobjectFound:
+            self.logger.info(
+                u"Deepstate Found no matching Object in Url(s), Running selected Action Group when Not Found Object")
+            if AGtorunNotFound != 0:
+                indigo.actionGroup.execute(AGtorunNotFound)
+            else:
+                self.logger.info(u"Running Selected Action Group: None.")
+            return
+
+        return
 
         ########################################
         # This method is called to generate a list of actions.
@@ -1637,10 +1825,34 @@ hair dryer, toothbrush'''
                      return "error"
              # Image downloaded
              # Now send to Deep State skipping any que...
-            if self.useLocal:
-                ipaddress = 'localhost'
+        except requests.exceptions.Timeout:
+            self.logger.info(u'Action Group has timed out and cannot connect to Blue Iris Server.')
+            return 'error'
+
+        except requests.exceptions.ConnectionError:
+            self.logger.info(u'Action Group has connection error to  BlueIris and cannot connect to url:'+unicode(url))
+            return 'error'
+        except requests.exceptions.InvalidURL:
+            self.logger.debug(u'Action Group Connection Error to BlueIris returned Invalid URL for :'+unicode(url))
+            return 'error'
+        except IOError as ex:
+            self.logger.debug(u'Action Group has an IO Error:'+unicode(ex))
+            return 'error'
+        except requests.exceptions.SSLError as ex:
+            self.logger.debug(u'Action Group has an SSL Error:'+unicode(ex))
+            return 'error'
+        except:
+            self.logger.exception(u'Caught Exception in threadDownloadImage')
+            return 'error'
+
+        try:
+            Deepstate2nd = self.pluginPrefs.get('DeepState2nd', False)
+            if Deepstate2nd:
+                ipaddress = self.ipaddress2
+                self.logger.debug(u'Using 2nd Deep State Service for this request.')
             else:
                 ipaddress = self.ipaddress
+
             urltosend = 'http://' + ipaddress + ":" + self.port + "/v1/vision/detection"
             if self.debug3:
                 self.logger.debug(u'Now Validing Image Data before sending..')
@@ -1692,11 +1904,14 @@ hair dryer, toothbrush'''
                 return 'error'
 
         except requests.exceptions.Timeout:
-            self.logger.debug(u'downloadandaddtoque  has timed out and cannot connect to BI Server.')
+            self.logger.info(u'Action Group Connection has timed out and cannot connect to Deep State Service at:'+unicode(urltosend))
             return 'error'
 
         except requests.exceptions.ConnectionError:
-            self.logger.debug(u'downloadandaddtoque connectServer has a Connection Error and cannot connect.')
+            self.logger.debug(u'Action Group Connection connectServer has a Connection Error and cannot connect.')
+            return 'error'
+        except requests.exceptions.InvalidURL:
+            self.logger.debug(u'Action Group Connection Error to DeepState returned Invalid URL for :'+unicode(urltosend))
             return 'error'
 
         except IOError as ex:
@@ -1770,8 +1985,166 @@ hair dryer, toothbrush'''
                 if self.debug1:
                     self.logger.debug(u'Putting item into DeepState Que: Item:' + unicode(item))
                 self.que.put(item)
+
+
         except Exception as ex:
             self.logger.exception(u'Caught Exception:  Some thing wrong with File Path or URL'+unicode(ex))
+            return
+        return
+
+    def sendtoDeepStateImmediately(self, action):
+        self.logger.debug(u"Send to DeepState Immediately Called as Action.")
+
+        imageType = action.props.get('imageType','')
+        imageLocation = action.props.get('ImageLocation','')
+
+        if imageType=='' or imageLocation =='':
+            self.logger.info(u'Please enter values for Action.  Aborted')
+            return
+        try:
+            if imageType == 'URL':
+                #Externaladd = threading.Thread(target=self.threadaddtoQue, args=[imageLocation, 'ExternalActionURL', 1, True, ''])
+                try:
+                    path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
+                    start = t.time()
+                    r = requests.get(imageLocation, stream=True, timeout=self.serverTimeout)
+                    if r.status_code == 200:
+                        with open(path, 'wb') as f:
+                            for chunk in r.iter_content(1024):
+                                f.write(chunk)
+                                if t.time() > (start + self.imageTimeout):
+                                    self.logger.error(
+                                        u'Downloading URL Download Image Taking too long.  Aborted.  ?Network issue')
+                                    break
+                            if self.debug2:
+                                self.logger.debug(u'Donwload URL Saved Image attempt for:' + unicode(
+                                    path) + u' in [seconds]:' + unicode(t.time() - start))
+                    else:
+                        self.logger.debug(u'Download URL Issue Downloading Image. Failed.')
+                        self.logger.debug(u'DownloadURL Requests: status code:' + unicode(
+                            r.status_code) + u' try one more time..')
+                        self.sleep(1)
+                        start = t.time()
+                        r2 = requests.get(imageLocation, stream=True, timeout=self.serverTimeout)
+                        if r2.status_code == 200:
+                            # self.logger.debug(u'Yah Code 200....')
+                            with open(path, 'wb') as f:
+                                for chunk in r2.iter_content(1024):
+                                    f.write(chunk)
+                                    if t.time() > (start + self.imageTimeout):
+                                        self.logger.error(
+                                            u'Download URL Download Image Taking too long.  Aborted.  ?Network issue')
+                                        break
+                                if self.debug2:
+                                    self.logger.debug(u'Download URL 2nd Saved Image attempt for:' + unicode(
+                                        path) + u' in [seconds]:' + unicode(t.time() - start))
+                        else:
+                            self.logger.info(u'Download URL 2nd attempt failed.  Aborted.')
+                            return
+                    # Image downloaded
+                    # Now add to Que
+                except requests.exceptions.Timeout:
+                    self.logger.info(u'DownloadURL  has timed out and cannot connect to the URL.')
+                    return
+                except requests.exceptions.ConnectionError:
+                    self.logger.info(
+                        u'Download URL connectServer has a Connection Error and cannot connect to Supplied URL.')
+                    return
+
+                except IOError as ex:
+                    self.logger.info(u'Download URL has an IO Error:' + unicode(ex))
+                    return
+
+                except:
+                    self.logger.exception(u'Download URL Caught Exception in threadDownloadImage')
+                    return
+
+
+            if imageType == 'FILE':
+                path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
+                copyfile(imageLocation,path)
+                ## create a temporary file from the one given - otherwise will be deleted
+
+            Deepstate2nd = self.pluginPrefs.get('DeepState2nd', False)
+            if Deepstate2nd:
+                ipaddress = self.ipaddress2
+                self.logger.debug(u'Using 2nd Deep State Service for this request.')
+            else:
+                ipaddress = self.ipaddress
+
+            urltosend = 'http://' + ipaddress + ":" + self.port + "/v1/vision/detection"
+            if self.debug3:
+                self.logger.debug(u'Now Validing Image Data before sending..')
+
+            if not self.imageVerify(path):
+                self.logger.info(u'Image Failed Verification. Not correct image.  Skipped.')
+                try:
+                    os.remove(path)
+                except Exception as ex:
+                    self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
+                return
+
+            if self.debug3:
+                self.logger.debug(u'Sending to :' + unicode(urltosend))
+            liveurlphoto = open(path, 'rb').read()
+            image = Image.open(path)
+            imagefresh = Image.open(path)
+            bytesImage = os.path.getsize(path)
+
+            if self.debug3:
+                self.logger.debug(u'Size of Current Image:' + unicode(bytesImage))
+
+            self.reply = True
+            response = requests.post(urltosend, files={"image": liveurlphoto}, timeout=15).json()
+            if self.debug1:
+                self.logger.debug(unicode(response))
+            # self.listCameras[cameraname] = False  # set to false as already run.
+
+            vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train']
+            anyobjectfound = False
+            if response['success'] == True:
+                self.mainProcessedImages = self.mainProcessedImages + 1
+                self.mainBytesProcessed = self.mainBytesProcessed + bytesImage
+
+                self.mainTimeLastRun = t.strftime('%c')
+                self.deepstateIssue = False
+                self.deepstatetimeouts = 0
+                for object in response["predictions"]:
+                    carfound = False
+                    label = object["label"]
+                    y_max = int(object["y_max"])
+                    y_min = int(object["y_min"])
+                    x_max = int(object["x_max"])
+                    x_min = int(object["x_min"])
+                    confidence = float(object['confidence'])
+
+                    ## if mainconfidence less than completely skip this object
+                    if confidence < float(self.confidenceMain):
+                        if self.debug4:
+                            self.logger.debug(
+                                u'Low Confidence for Object:' + unicode(label) + ' so skipping.  Checking next.')
+                        continue
+
+                    objectfound = True
+                    if label in vehicles:
+                        carfound = True
+                    draw = ImageDraw.Draw(image)
+                    draw.rectangle(((x_min, y_min), (x_max, y_max)), fill=None, outline='red', width=3)
+                    labelonbox = str(label) + ' ' + str(confidence)
+                    draw.text((x_min + 5, y_min + 5), labelonbox, font=ImageFont.truetype(font='Arial.ttf', size=18),
+                              fill='red')
+                    cropped = imagefresh.crop((x_min, y_min, x_max, y_max))
+                    self.checkallobjects(label, cropped, ipaddress, "NoCamera", '', image, imagefresh, 0,
+                                         confidence, x_min, x_max, y_min, y_max, True)
+
+            else:
+                self.logger.debug(u'Thread:SendtoDeepstate: DeepState Request failed:')
+
+
+            return
+
+        except Exception as ex:
+            self.logger.exception(u'Caught Exception:  Something wrong with File Path or URL'+unicode(ex))
             return
         return
 

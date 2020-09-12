@@ -93,6 +93,35 @@
                    hidden ='True'>
 				<Label>Apple Account ID:</Label>
 			</Field>
+    <Field id="sep22aa4" type="separator"/>
+     <Field id="DeepState2nd" type="checkbox" default="false" tooltip="Different DeepState Service for Action Groups">
+        <Label>2nd DeepState Instance: </Label>
+        <Description>Enable/Disable</Description>
+             </Field>
+            <Field id="ipaddress2"
+				   type="textfield"
+				   tooltip="Enter ipaddress for 2nd DeepState Service checkbox"
+				   default=""    visibleBindingId="DeepState2nd" visibleBindingValue="true"               >
+
+				<Label>Enter your Ip Address of 2nd DeepState Service:</Label>
+			</Field>
+            <Field id="port2"
+				   type="textfield"
+				   tooltip="Enter Port of 2nd DeepState Service"
+				   default="7188"      visibleBindingId="DeepState2nd" visibleBindingValue="true"
+            >
+				<Label>Enter your Port:</Label>
+			</Field>
+<Field id="spacedesa2" type="label" fontSize="small" fontColor="darkgray">
+    <Label>
+        Enabling this option will enable you to send Action Calls/from Action Groups triggers
+        to a 2nd DeepState Service.
+        e.g 2nd Device running on RPI or equivalent
+        If Disabled main deepstate Service will be used for all calls.
+
+
+    </Label>
+  </Field>
       <Field id="sep224" type="separator"/>
 
       <Field id="generateMain"

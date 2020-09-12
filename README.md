@@ -210,8 +210,18 @@ ChangeLog:
 
 Better late than Never!
 
+0.6.6
+Add BI Camera Checking Action Group - unfortunately needs BI server/port details entered in AG settings
+Add option for 2nd DeepState service running - to be used for action groups if needed
+Allows another instance of deepstate running on a localip eg. use RPI with deepstate/NCS somewhere to do some of the processing
+If unchecked will use the main device for all calls (no change)
+Shouldn't really be issue
+Add new Action Group - for immediately sending back to DeepState the URL/or File, not que, send immediately
+Change logic of new Action Groups to allow separate AG to be selected for object found/or not found and both...
+Cosmetic changes
+
 0.6.0
-Report back to BlueIris and Flag video if object detected
+**** Report back to BlueIris and Flag video if object detected ****
 Only will flag BI videos when Deep State Object device exists (same for saving images)
 Use 'memo' = DeepState_ObjectType
 Can't seem to access this memotext at moment within BI or iOS, but potentially with BI update.

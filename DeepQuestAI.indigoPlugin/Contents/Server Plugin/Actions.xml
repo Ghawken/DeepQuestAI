@@ -18,10 +18,57 @@
                   >
 				<Label>Path or URL to use:</Label>
 			</Field>
-        <Field id="sep3" type="separator"/>
+          <Field id="spacedesesa2" type="label" fontSize="small" fontColor="darkgray">
+    <Label>
+        This Action group will que the item to the 1st DeepState Service.
+        This ideally should be used for multiple calls, streaming in from camera(s)
+        For a single, once in a while call, use the Send Image to DeepState Immediately AG
+        This Action Group will always use the Main DeepState Service configured in plugin Configs
+
+        Any objects found here will cause trigger to fire on Device Triggers setup,
+        Any objects found will be saved and logged in Object Device Exists
+
+    </Label>
+  </Field>
     </ConfigUI>
 
     </Action>
+<Action id="sendURL2" >
+        <Name>Send Image to DeepState Immediately</Name>
+        <CallbackMethod>sendtoDeepStateImmediately</CallbackMethod>
+            <ConfigUI>
+        <Field id="imageType" type="menu">
+            <Label>Image Type :</Label>
+            <List>
+            <Option value="URL">URL</Option>
+            <Option value="FILE">File</Option>
+        </List>
+        </Field>
+        <Field id="ImageLocation"
+				   type="textfield"
+				   tooltip="Enter URL or Image path"
+				   default=""
+                  >
+				<Label>Path or URL to use:</Label>
+			</Field>
+          <Field id="spacedesesa2" type="label" fontSize="small" fontColor="darkgray">
+    <Label>
+        This Action group will Immediately send the item to the DeepState Service.
+        This will jump over any qued items.
+        This ideally should be used for once in a while call
+        This Action Group will use the 2nd DeepState Service if Configured.
+
+        Any objects found here will cause trigger on Device Triggers setup,
+        Any objects found will be saved and logged in Object Device Exists
+
+    </Label>
+  </Field>
+
+
+    </ConfigUI>
+
+    </Action>
+
 
      <Action id="checkCameraAG" >
         <Name>Check URL Image and Run Action Group</Name>
@@ -94,6 +141,134 @@
     </Field>
             <Field id="imageurl5" type="textfield" visibleBindingId="anotherurl4" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
              <Label>Image URL #5 :</Label>
+         </Field>
+           <Field id="labeldesc" type="label" visibleBindingId="anotherurl1" fontColor="darkgray" fontSize="small" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+             <Label >These will be checked sequentially with the same conditions eg. All have to have no object, or Any with object fortriggering
+             </Label>
+         </Field>
+
+     <Field id="sep23a2b5aa" type="separator" alwaysUseInDialogHeightCalc="true" />
+                <Field id="ActionGroupFound" type="menu" default="None" alwaysUseInDialogHeightCalc="true">
+				<Label>Action Group to Run if Object FOUND:</Label>
+               <List class="self" method="actionsToList" dynamicReload="true" />
+			</Field>
+            <Field id="sep23a2b5aae" type="separator" alwaysUseInDialogHeightCalc="true"/>
+                <Field id="ActionGroupNotFound" type="menu" default="0" alwaysUseInDialogHeightCalc="true">
+				<Label>Action Group to Run if Object NOT Found:</Label>
+               <List class="self" method="actionsToList" dynamicReload="true" />
+			</Field>
+ <Field id="sep23a2b25aae" type="separator" />
+    </ConfigUI>
+
+    </Action>
+
+
+     <Action id="checkBICameraImage" >
+        <Name>Check BlueIris Cameras and Run Action Group</Name>
+        <CallbackMethod>checkBICameraAG</CallbackMethod>
+            <ConfigUI>
+                           			<Field id="serverip"
+				   type="textfield"
+				   tooltip="Enter the BlueIris Server IP"
+				   default="">
+				<Label>BlueIris Server:</Label>
+			</Field>
+
+			<Field id="serverport"
+				   type="textfield"
+				   tooltip="Enter your BlueIris Server Port eg. 80"
+				   default="80"
+				   secure = "False">
+				<Label>Enter your Port:</Label>
+			</Field>
+
+                            <Field id="BIusername"
+				   type="textfield"
+				   tooltip="Enter BI Username"
+				   default=""                   >
+
+				<Label>Enter your BlueIris Username:</Label>
+			</Field>
+            <Field id="BIpassword"
+				   type="textfield"
+				   tooltip="Enter BI password"
+				   default=""                   >
+				<Label>Enter your BlueIris Password:</Label>
+			</Field>
+
+
+                <Field id="objectType" type="menu">
+            <Label>Object Type :</Label>
+            <List>
+            <Option value="car">Car</Option>
+            <Option value="person">Person</Option>
+                <Option value="other">Other</Option>
+        </List>
+        </Field><Field id="objectOther" type="textfield" visibleBindingId="objectType" visibleBindingValue="other" alwaysUseInDialogHeightCalc="true" default="">
+            <Label>Object Type :</Label>
+        </Field>
+    <Field id="info33" type="label" fontSize="small" fontColor="darkgray" visibleBindingId="objectType" visibleBindingValue="other" alwaysUseInDialogHeightCalc="true">
+    <Label>
+        The above setting allows you to manually enter object for device and trigger
+        The DeepState options are:
+
+        person,   bicycle,   car,   motorcycle,   airplane,
+        bus,   train,   truck,   boat,   traffic light,   fire hydrant,   stop_sign,
+        parking meter,   bench,   bird,   cat,   dog,   horse,   sheep,   cow,   elephant,
+        bear,   zebra, giraffe,   backpack,   umbrella,   handbag,   tie,   suitcase,
+        frisbee,   skis,   snowboard, sports ball,   kite,   baseball bat,   baseball glove,
+        skateboard,   surfboard,   tennis racket, bottle,   wine glass,   cup,   fork,
+        knife,   spoon,   bowl,   banana,   apple,   sandwich,   orange, broccoli,   carrot,
+        hot dog,   pizza,   donot,   cake,   chair,   couch,   potted plant,   bed, dining table,
+        toilet,   tv,   laptop,   mouse,   remote,   keyboard,   cell phone,   microwave,
+        oven,   toaster,   sink,   refrigerator,   book,   clock,   vase,   scissors,   teddy bear,
+        hair dryer, toothbrush.
+
+        Not sure why would need all these options - but there you go!
+    </Label>
+    </Field>
+
+        <Field id="sep3" type="separator" alwaysUseInDialogHeightCalc="true" />
+    <Field id="confidence"
+				   type="textfield"
+				   tooltip="Enter lowest confidence to be trigger, from 0 to 1"
+				   fontSize="small"
+           default="0.7" >
+				<Label>Confidence level above which to be triggered 0-1 eg. 0.6:</Label>
+			</Field>
+                <Field id="imageurl" type="menu" >
+                <Label>Camera 1:</Label>
+                <List class="indigo.devices" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"/>
+            </Field>
+
+                <Field type="checkbox" id="anotherurl1" defaultValue="false" alwaysUseInDialogHeightCalc="true">
+        <Label>Enable another Camera to Check:</Label>
+    </Field>
+            <Field id="imageurl2" type="menu" visibleBindingId="anotherurl1" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+                <Label>Camera 2:</Label>
+                <List class="indigo.devices" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"/>
+         </Field>
+
+                <Field type="checkbox" id="anotherurl2" defaultValue="false" visibleBindingId="anotherurl1" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Enable another Camera to Check:</Label>
+    </Field>
+            <Field id="imageurl3" type="menu" visibleBindingId="anotherurl2" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+             <Label>Camera 3:</Label>
+                <List class="indigo.devices" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"/>
+         </Field>
+<Field type="checkbox" id="anotherurl3" defaultValue="false"  visibleBindingId="anotherurl2" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Enable another Camera to Check:</Label>
+    </Field>
+            <Field id="imageurl4" type="menu" visibleBindingId="anotherurl3" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+             <Label>Camera 4:</Label>
+                <List class="indigo.devices" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"/>
+         </Field>
+<Field type="checkbox" id="anotherurl4" defaultValue="false"  visibleBindingId="anotherurl3" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Enable another Camera to Check:</Label>
+    </Field>
+            <Field id="imageurl5" type="menu" visibleBindingId="anotherurl4" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+            <Label>Camera 5:</Label>
+                <List class="indigo.devices" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"/>
          </Field>
            <Field id="labeldesc" type="label" visibleBindingId="anotherurl1" fontColor="darkgray" fontSize="small" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
              <Label >These will be checked sequentially with the same conditions eg. All have to have no object, or Any with object fortriggering
