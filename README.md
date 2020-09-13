@@ -24,9 +24,9 @@ Positive - have images to use and keep / Cars/ People saved forever
 Negative - need CPU cycles to run the detection
 
 
-Potential Uses
+###### **Potential Uses**
 
-First:
+First:  (**with BlueIris setup and/or BI Indigo Plugin**)
 
 Setup, enable broadcast in BI plugin
 All BI Cameras will send motion alerts to this DeepState Plugin.
@@ -41,9 +41,45 @@ Can create a DeepState Plugin Device for important objects eg. Person or Cars
 If Device exists Plugin will save all images of these objects, archiving to Network storage if enabled/setup
 Device States also have time/last detected, image links etc.
 
-Plus additional:
+eg. flow
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateBISetup.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateBISetup.png)
 
-HTTP Server:
+
+###### or
+
+No BlueIris, or BlueIris but only for occasional Action Group based use.
+eg.
+Check no person outside on BI Outside Cameras1,2,3,4 before turn lights off.
+
+Action Group Only Usage:
+
+With BlueIris have no enabled Cameras in PluginConfig (won't check any cameras regularly like about flow)
+But you can trigger a actionGroup to run:
+
+eg Check URL Image and Run Action Group if object Found or Not Found:
+eg Check BlueIris Camera Feed and Run Action Group if Object Found or Not Found
+
+Checks a URL Image from BI Camera for example, but can be any URL Image.
+Checks for presence or absence of an object e.g car gone, person present.
+Then runs an action group depending on presence or absence
+
+eg.
+Door closed trigger, run this AG, perhaps with delay,,,
+Checks Camera for Person present - if no person run action group to turn lights off
+
+eg.
+Check Garage for Car - Car absent, run appropriate action groups
+
+Flow:
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateNotBISetup.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateNotBISetup.png)
+
+
+
+
+
+###### Plus additional:
+
+**HTTP Server:**
 Creates a very basic image server - showing for control page use the last detected objects
 e.g indigoip:4142/car.html
 Set as refreshingURL in control page will show the last image of car found.
@@ -52,21 +88,8 @@ NB:  To save images need to create Indigo Devices for that particularly Object T
 
 Third:  (Additional) or can be stand alone
 
-0.5.9 Addition
 
-Action Group 
-Check URL Image and Run Action Group:
 
-Checks a URL Image from BI Camera for example, but can be any URL Image.
-Checks for presence or absence of an object e.g car gone, person present.
-Then runs an action group depending on presence or absence
-
-eg.
-Door closed trigger, run this AG, perhaps with delay
-Checks Camera for Person present - if no person run action group to turn lights off
-
-eg.
-Check Garage for Car - Car absent, run appropriate action groups
 
 
 
@@ -209,6 +232,10 @@ person found, do this etc.
 ChangeLog:
 
 Better late than Never!
+
+0.6.7
+Add some more information to Triggers/Actions regarding what happens
+Add Possible Flow Charts to Readme.
 
 0.6.6
 Add BI Camera Checking Action Group - unfortunately needs BI server/port details entered in AG settings

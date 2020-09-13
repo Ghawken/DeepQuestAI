@@ -25,7 +25,7 @@
         For a single, once in a while call, use the Send Image to DeepState Immediately AG
         This Action Group will always use the Main DeepState Service configured in plugin Configs
 
-        Any objects found here will cause trigger to fire on Device Triggers setup,
+        Any objects found here WILL cause triggers to fire on Indigo DeepState Object Type Triggers.
         Any objects found will be saved and logged in Object Device Exists
 
     </Label>
@@ -58,7 +58,7 @@
         This ideally should be used for once in a while call
         This Action Group will use the 2nd DeepState Service if Configured.
 
-        Any objects found here will cause trigger on Device Triggers setup,
+        Any objects found here WILL cause Indigo triggers on Object Type
         Any objects found will be saved and logged in Object Device Exists
 
     </Label>
@@ -158,6 +158,14 @@
                <List class="self" method="actionsToList" dynamicReload="true" />
 			</Field>
  <Field id="sep23a2b25aae" type="separator" />
+                    <Field id="newDittospacea2" type="label" fontSize="small" fontColor="darkgray">
+    <Label>
+        This Action will NOT cause DeepState Object Triggers to fire.
+        Obviously not required as can set own Action Groups on Object Found, and Object Not Found.
+    </Label>
+  </Field>
+
+
     </ConfigUI>
 
     </Action>
@@ -286,6 +294,14 @@
                <List class="self" method="actionsToList" dynamicReload="true" />
 			</Field>
  <Field id="sep23a2b25aae" type="separator" />
+                 <Field id="Dittospacea2" type="label" fontSize="small" fontColor="darkgray">
+    <Label>
+        This Action will NOT cause DeepState Object Triggers to fire.
+        Obviously not required as can set own Action Groups on Object Found, and Object Not Found.
+    </Label>
+  </Field>
+
+
     </ConfigUI>
 
     </Action>

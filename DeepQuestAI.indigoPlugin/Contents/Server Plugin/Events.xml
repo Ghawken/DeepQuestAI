@@ -43,12 +43,18 @@
 				   default="0.7" >
 				<Label>Confidence level above which to be triggered 0-1 eg. 0.6:</Label>
 			</Field>
+        <Field id="bbsep23a2b5aa" type="separator" alwaysUseInDialogHeightCalc="true" />
          <Field id="deviceCamera" type="list" rows="14">
                 <Label>From Camera(s)</Label>
-
              <List class="self" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera" method="EventreturnCameras"/>
          </Field>
-
+            <Field id="thisDittospacea2" type="label" fontSize="small" fontColor="darkgray">
+    <Label>
+        Selected Cameras are ignored if a external source of image is used.
+        eg.  Send URL/File to DeepState - there are no BI Cameras involved, and this trigger will still fire.
+    </Label>
+  </Field>
+    <Field id="aasep23a2b5aa" type="separator" alwaysUseInDialogHeightCalc="true" />
 
             <Field id="dontretrigger"
 				   type="textfield"
