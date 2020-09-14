@@ -313,7 +313,7 @@ To enable Alert images
 Within Camera on Blue Iris Server go to Trigger, and click enable Alert Jpg, ideally second checkbox Hi-Res Image
 
 Within Camera on Blie Iris Server:
-![https://github.com/Ghawken/IndigoPlugin-BlueIris/blob/cliplist/Images/BIOnAlert.png](https://github.com/Ghawken/IndigoPlugin-BlueIris/blob/cliplist/Images/BIOnAlert.png)
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/BIOnAlert.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/BIOnAlert.png)
 
 
 
