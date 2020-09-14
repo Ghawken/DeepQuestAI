@@ -1,6 +1,6 @@
 # Indigoplugin for DeepQuestAI
 
-This is a _Simple_ plugin for DeepQuestAI or DeepStackAI.
+This is a _Simple_, well maybe not.. but powerful! plugin for DeepQuestAI or DeepStackAI.
 
 DeepQuestAI is an interesting local Artificial Intelligence Object ML detection API AI engine.
 https://deepquestai.com/
@@ -25,21 +25,25 @@ Currently (have scanned 2021439 images so far - more than 700gigs!)
 
 Is all local, which is both positive and negative:
 
-Positive - have images to use and keep / Cars/ People saved forever 
-         - Plugin can send images to archive Network directory keeping time stamped photos of all people detected etc.
-         - No security issues; nothing going offsite
-         - Options running on RPI with NCS2 (get about 1sec processing per image)
-         - Seems faster than off site options (like Sentry on BI)
-         - Run Action Groups based on URL or BI Camera when Object or no object 
-         (add Machine Learning to lights off - e.g timer expired, check cameras for people, turn off if none)
-         - Archive images forever; Gate Camera scans for Car, when detected saves images; no data issues given size of images
-         - On setup enabled Blue Iris Cameras - flags back to BI that objecte detected eg. flags camera videos in BI interface
+Benefits:
+1. have images to use and keep / Cars/ People saved forever 
+2. Plugin can send images to archive Network directory keeping time stamped photos of all people detected etc.
+3. No security issues; nothing going offsite
+4. Options running on RPI with NCS2 (get about 1sec processing per image)
+5. Seems faster than off site options (like Sentry on BI)
+6. Run Action Groups based on URL or BI Camera when Object or no object 
+(add Machine Learning to lights off - e.g timer expired, check cameras for people, turn off if none)
+7. Archive images forever; Gate Camera scans for Car, when detected saves images; no data issues given size of images
+8. On setup enabled Blue Iris Cameras - flags back to BI that object detected eg. flags camera videos in BI interface
          
          
-Negative - need CPU cycles to run the detection... 
+Negatives:
+1. need to setup Plugin
+1. need CPU cycles to run the detection...
+Although RPI with NCS2 averages about 1-2 seconds per image on my testing 
 
 
-#### **Potential Uses**
+## **Potential Uses**
 
 First:  (**with BlueIris setup and/or BI Indigo Plugin**)
 
@@ -91,7 +95,7 @@ Flow:
 
 
 
-### But wait there is more...
+### But wait there is a lot more...
 
 #### **HTTP Server:**
 
@@ -257,9 +261,68 @@ This trigger will fire ignoring the missing Cameras with the SendURL Action Grou
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/AGCheckBICamerasAG.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/AGCheckBICamerasAG.png)
 
 
-ChangeLog:
+These two action groups should be self-explanatory - basically do the same thing, one using raw URL, and the other using BI Camera Details.
 
-Better late than Never!
+## Other
+
+### RAM Disk Usage
+Optionally the Plugin creates and uses a RAM disk (set to 256MB) for saving ALL the incoming image data from BI
+Given the traffic of data I felt best to use RAM and this seemed the best way.
+All BI/URL images are downloaded from source to RAM drive, set to DeepStack and then deleted.
+If Object detected and Deep Stack Device exists, these images are saved.
+
+### Archive Image Files
+Optionally the plugin can archive images after a period of time to network storage for long term storage
+Add ability to set a archive smb network directory.
+Needs to be a smb network location:  (if local directory just use SaveDirectory)
+Format:
+//USERNAME:PASSWORD@SERVER/Directory/Directory
+Set up in Plugin Config
+
+### Optional 2nd DeepState Server
+Optionally the plugin can use another DeepState Service, eg. 2 RPIs, or one PC/MAC one RPI
+The 2nd device is used for Action Groups, as noted in the Action Group information
+
+### Supercharge Meaning 
+
+Optionally this downloads multiple images over set period of time for object detection.
+eg.
+Camera triggered - Plugin get ALERT image from BI - this is processed for object detection
+If supercharge is setup, the plugin will download from BlueIris Camera further images
+eg. Number of Images 10, Time apart 1 sec
+It will download from BlueIris a image every second for 10 seconds, que and send these to DeepState for Object Detection.
+
+This may mean that you get 10 images of car/person detected saved, but each closer/further away and with different details.
+Still tiny small images compared to Video Files
+
+####  Backend
+
+The Plugin uses multiple threads for downloading images at the correct time, and from multiple sources simultaneously
+All images are sent to the DeepState server in a tidy QUE, only one at a time.
+DeepState server, can have issues if multiple requests of it at once, this overcomes this issue.
+Most requests, are qued and then processed one-one by DeepState.
+There are a number of settings to deal with a slow que, or processing that is taking to long.
+Bottom line is if que is long, you should drop some supercharge image numbers or look at numbers of cameras enabled.
+
+### FAQ
+
+#### Alert Images
+
+The Plugins will use BI Alert Images (first captured motion with triggering event)  Important to get these images otherwise quick motion gone in under a second may be missed
+To enable Alert images
+Within Camera on Blue Iris Server go to Trigger, and click enable Alert Jpg, ideally second checkbox Hi-Res Image
+
+Within Camera on Blie Iris Server:
+![https://github.com/Ghawken/IndigoPlugin-BlueIris/blob/cliplist/Images/BIOnAlert.png](https://github.com/Ghawken/IndigoPlugin-BlueIris/blob/cliplist/Images/BIOnAlert.png)
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------
+
+### ChangeLog:
+
+#### Better late than Never!
 
 0.6.8
 Delete Action images from calls, rather than waiting for cleanup
