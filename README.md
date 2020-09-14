@@ -24,7 +24,7 @@ Positive - have images to use and keep / Cars/ People saved forever
 Negative - need CPU cycles to run the detection
 
 
-###### **Potential Uses**
+#### **Potential Uses**
 
 First:  (**with BlueIris setup and/or BI Indigo Plugin**)
 
@@ -45,7 +45,7 @@ eg. flow
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateBISetup.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateBISetup.png)
 
 
-###### or
+#### or
 
 No BlueIris, or BlueIris but only for occasional Action Group based use.
 eg.
@@ -77,33 +77,30 @@ Flow:
 
 
 
-###### Plus additional:
+#### Plus additional:
 
-**HTTP Server:**
-Creates a very basic image server - showing for control page use the last detected objects
-e.g indigoip:4142/car.html
+#### **HTTP Server:**
+
+Creates a very basic image Web server -  for control page use, showing the last detected objects
+
+e.g http://indigoip:4142/car.html
+
 Set as refreshingURL in control page will show the last image of car found.
-On refreshing the URL goes backwards in time through all saved images (Non-archived)
+On refreshing the URL, the web server goes backwards in time through all saved images (Non-archived)
+Cycling back to beginning again.
+
 NB:  To save images need to create Indigo Devices for that particularly Object Type!
 
-Third:  (Additional) or can be stand alone
 
-
-
-
-
-
-
-
-Setup
+### Setup
 
 1. Install DeepStack, run and activate with your API code on html website.  
 (API code now not needed free for all)
 Start DeepStack Server - recognition only API needed, pick port to run on 
 Plugin Defaults to 7188
 
-##### Plugin Needs Pillow installed/PIL for image control
-##### pip install pillow
+#### Plugin Needs Pillow installed/PIL for image control
+#### pip install pillow
 
 2. Install Plugin and setup with PluginConfig
 
@@ -115,7 +112,9 @@ Follow the detailed instructions in the Plugin Config page
 3.  Make sure running BlueIris Plugin version >1.1.12 and above
 Enable within BlueIris plugin, the Broadcast setting
 
+
 # DeepStateAI Plugin
+
 
 ## Plugin Config Settings:
 
@@ -140,6 +139,8 @@ DeepQuestAI will pull 5 images, 2 seconds apart one after another and send to De
 Obviously the number of cameras enabled, and speed of DeepStack will be very important here
 
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStatePluginConfig2.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStatePluginConfig2.png)
+
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStatePluginConfig3.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStatePluginConfig3.png)
 
 
 Warning:
@@ -222,11 +223,15 @@ person found, do this etc.
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateTriggersObject.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateTriggersObject.png)
 
 
+This trigger will fire ignoring the missing Cameras with the SendURL Action Group
 
 ## Actions
 
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateActions.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateActions.png)
 
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/AGCheckURLAG.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/AGCheckURLAG.png)
+
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/AGCheckBICamerasAG.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/AGCheckBICamerasAG.png)
 
 
 ChangeLog:
