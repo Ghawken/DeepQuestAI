@@ -1898,9 +1898,17 @@ hair dryer, toothbrush'''
                         return "objectFound"
                 ## Need to check here as checking for absence as well, and need to see all predictions
                 # No object found
+                try:
+                    os.remove(path)
+                except Exception as ex:
+                    self.logger.debug(u'Error deleting file' + unicode(ex))
                 return "noobjectFound"
             else:
                 self.logger.info(u"Error from Deepstate for this uRL")
+                try:
+                    os.remove(path)
+                except Exception as ex:
+                    self.logger.debug(u'Error deleting file' + unicode(ex))
                 return 'error'
 
         except requests.exceptions.Timeout:
@@ -2140,6 +2148,10 @@ hair dryer, toothbrush'''
             else:
                 self.logger.debug(u'Thread:SendtoDeepstate: DeepState Request failed:')
 
+            try:
+                os.remove(path)
+            except Exception as ex:
+                self.logger.debug(u'Error deleting file'+unicode(ex))
 
             return
 

@@ -1,44 +1,59 @@
 # Indigoplugin for DeepQuestAI
 
-This is now the beginning of a plugin for DeepQuestAI or DeepStackAI 
+This is a _Simple_ plugin for DeepQuestAI or DeepStackAI.
 
-DeepQuestAI is an interesting local AI detection API AI engine.
+DeepQuestAI is an interesting local Artificial Intelligence Object ML detection API AI engine.
 https://deepquestai.com/
 
-It runs with a docker container on windows PC (Follow instructions), Docker on mac or within a rpi (ideallly with Neural NCS stick)
-A new beta and open sourcing of it is expected at anytime..
+It runs locally on your network - no internet, or cloud involvement needed, until some of BlueIris alternatives
+DeepQuest has also been used as a base for local AI addon for Blue Iris (see ipcamtalk forums)
 
-This plugin deeply ties in with BlueIris plugin (where new updated Plugin version is needed), it then uses indigo 7+ Broadcast ability to communicate between plugins.
+DeepQuest runs with a docker container on windows PC (Follow instructions), Docker on mac or within a rpi (ideallly with Neural NCS stick)
+A new beta and open sourcing of it is expected at anytime..  (Sep 2020)
 
-You need to install and setup DeepStackAI.  This will end up with a IP address and port where Deepstack is running.
-Windows, Mac versons available - with local usage for current plugin requirements
-An API number is needed, but can be freely installed.
+This plugin can tie deeply in with BlueIris plugin (where the latest BI Plugin version is needed), it then uses indigo 7+ Broadcast ability to communicate between plugins.
 
-On my now growing testing works very well.
+You need to install and setup DeepStack AI, as per its instructions.  
+After this is completed you will end up with a IP address and port where Deepstack is running.
+
+Within Deepstack we need the **Detection API Running**  or "VISION-DETECTION=True" in startup commands.
+
+This will end up with a IP address and port where Deepstack is running.
+
+On my now growing, now for over a year with a smattering of other users testing works very well.
 Currently (have scanned 2021439 images so far - more than 700gigs!)
+
 Is all local, which is both positive and negative:
+
 Positive - have images to use and keep / Cars/ People saved forever 
          - Plugin can send images to archive Network directory keeping time stamped photos of all people detected etc.
-         - No security issues
+         - No security issues; nothing going offsite
+         - Options running on RPI with NCS2 (get about 1sec processing per image)
          - Seems faster than off site options (like Sentry on BI)
-Negative - need CPU cycles to run the detection
+         - Run Action Groups based on URL or BI Camera when Object or no object 
+         (add Machine Learning to lights off - e.g timer expired, check cameras for people, turn off if none)
+         - Archive images forever; Gate Camera scans for Car, when detected saves images; no data issues given size of images
+         - On setup enabled Blue Iris Cameras - flags back to BI that objecte detected eg. flags camera videos in BI interface
+         
+         
+Negative - need CPU cycles to run the detection... 
 
 
 #### **Potential Uses**
 
 First:  (**with BlueIris setup and/or BI Indigo Plugin**)
 
-Setup, enable broadcast in BI plugin
+Setup, enable broadcast in BI Indigo plugin
 All BI Cameras will send motion alerts to this DeepState Plugin.
 Camera Images will be processed by Deepstate as you request for objects.
 
-What images - well all Motion/Triggered images from the Camera itself.
-eg. When motion detected at Gate Cam -> alerts Deepstate, sends image (or multiple if have supercharge enabled) and processes for objects
+What images? - well all Motion/Triggered images from the Camera itself.
+eg. When motion detected at Gate Cam -> alerts Deepstate, sends image and processes this image for object detection
 If object found:
     Can enable a Indigo Trigger - see DeepState Plugin Triggers 
 
-Can create a DeepState Plugin Device for important objects eg. Person or Cars
-If Device exists Plugin will save all images of these objects, archiving to Network storage if enabled/setup
+Can create a DeepState Plugin Device for important objects eg. DeepState Device Person or Cars
+If DeepState Device exists for this object Plugin will save all images of these objects, archiving to Network storage if enabled/setup
 Device States also have time/last detected, image links etc.
 
 eg. flow
@@ -76,41 +91,44 @@ Flow:
 
 
 
-
-#### Plus additional:
+### But wait there is more...
 
 #### **HTTP Server:**
 
 Creates a very basic image Web server -  for control page use, showing the last detected objects
+Defaults to port 4142, set up in Plugin Config.
 
-e.g http://indigoip:4142/car.html
+e.g 
+`http://INDIGO-IP-ADDRESSS:4142/car.html`
 
-Set as refreshingURL in control page will show the last image of car found.
-On refreshing the URL, the web server goes backwards in time through all saved images (Non-archived)
-Cycling back to beginning again.
+Set the above as a refreshing URL in control page will show the last image of car found.
 
-NB:  To save images need to create Indigo Devices for that particularly Object Type!
+On refreshing the the same URL, the web server goes backwards in time through all saved non-archived images.
+Cycling back to beginning again once reached end.
+
+NB:  To save images need to create Indigo DeepState Device for that particularly Object Type!
 
 
-### Setup
+## Setup
 
-1. Install DeepStack, run and activate with your API code on html website.  
+1. Install DeepStack, run.  
 (API code now not needed free for all)
-Start DeepStack Server - recognition only API needed, pick port to run on 
+Start DeepStack Server - Detection recognition only API needed, pick port to run on DeepState on
 Plugin Defaults to 7188
 
 #### Plugin Needs Pillow installed/PIL for image control
-#### pip install pillow
 
-2. Install Plugin and setup with PluginConfig
+`sudo pip install pillow`
+
+2. Install this Plugin and setup with PluginConfig
 
 Enter the ipaddress of your DeepStateAI API
 Enter the port that you are using.
 
-Follow the detailed instructions in the Plugin Config page
+Follow the detailed instructions and information in the Plugin Config page
 
 3.  Make sure running BlueIris Plugin version >1.1.12 and above
-Enable within BlueIris plugin, the Broadcast setting
+**Enable within BlueIris plugin, the Broadcast setting**
 
 
 # DeepStateAI Plugin
@@ -127,8 +145,8 @@ BlueIris Cameras that are enabled for image checking.
 Overriding Camera selection, can select all, and then within multiple triggers further define.
 
 SuperCharge Detection:
-This setting, pulls multiple images from BlueIris and chucks them all at the DeepStackAI API if enabled.
-Images Number: Once camera trigger - the number of images to pull
+This setting, pulls multiple images from BlueIris following camera triggering and chucks them all at the DeepStackAI API if enabled.
+Images Number: Once camera triggered - the number of images to pull
 Seconds Apart:  The numbers of seconds apart
 
 eg.
@@ -136,7 +154,7 @@ SuperCharge Enabled:
 Motion/Camera triggered.
 DeepQuestAI will pull 5 images, 2 seconds apart one after another and send to DeepQuest API for image recognition.
 
-Obviously the number of cameras enabled, and speed of DeepStack will be very important here
+Obviously the number of cameras enabled, and speed of DeepStack processing will be very important here
 
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStatePluginConfig2.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStatePluginConfig2.png)
 
@@ -184,10 +202,9 @@ Will ONLY save images if a matching Indigo Device exists.
 
 eg: Indigo Device DeepState Object == Car
 Will save all images found of object = Car
-& vice versa
+& etc
 
 Will trigger however, without any devices existing - just won't save images.
-
 
 Within Cars/Faces always saves a copy of the whole Image (with bounding red box and Confidence in top left)
 Also saves a cropped Copy of the Person/Car
@@ -195,9 +212,8 @@ Also saves a cropped Copy of the Person/Car
 Will shortly add ability to date/move/keep images for as long as wanted.
 
 
-
 ## Plugin:
-Has One Device
+Has One User created Device:
 
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateDeviceOptions.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateDeviceOptions.png)
 
@@ -207,11 +223,19 @@ Choose between Vehicle and Person and Other - for everything else.
 Enter the desired confidence for this Object.
 When found the Device will be updated with details, including Image link
 
+Has One Main Device:
+
+Generated from within Plugin Config
+
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateMainDeviceStates.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateMainDeviceStates.png)
+
+States as displayed above
+
+
 ## Has One Trigger:
 
-This is likely the main usage:
 Edit Event Settings:
-- Select the object Type that trigger is looking for Person versus Car
+- Select the object Type that trigger is looking for Person versus Car, versus other
 - Select the confidence interval to use eg. 0.6
 - Select the Cameras you are using for this trigger, one or many
 - Select the don't retrigger within this time period eg. 10 seconds or 120 seconds etc
@@ -221,7 +245,6 @@ eg.
 person found, do this etc.
 
 ![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateTriggersObject.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStateTriggersObject.png)
-
 
 This trigger will fire ignoring the missing Cameras with the SendURL Action Group
 
@@ -237,6 +260,10 @@ This trigger will fire ignoring the missing Cameras with the SendURL Action Grou
 ChangeLog:
 
 Better late than Never!
+
+0.6.8
+Delete Action images from calls, rather than waiting for cleanup
+Use &ALERT_PATH in BI trigger info, sometime in past this changed
 
 0.6.7
 Add some more information to Triggers/Actions regarding what happens
@@ -290,14 +317,16 @@ Trial of Daemon threads instead - to avoid hanging when closing RAMdisk
 
 0.5.0
 Better downloading, add to Que behaviour
+
 Use BI ALertImages - changes to BI Plugin updates to version 1.1.16
 If alertimage received/enabled in BI will always use Alert Image,plus whatever is setup
-Uses hires AlertImages - Capture hi Res ALert images should be enabled.
-Changes to BI Trigger setup to format
+Uses hires AlertImages - Capture hi Res ALert images should be enabled in trigger tab of Camera
+
+Changes to BI Trigger setup to format  **(NB Changed to ALERT_PATH)**
 On:
-192.168.1.6:4556/&CAM/&TYPE/&PROFILE/True/&ALERT
+192.168.1.6:4556/&CAM/&TYPE/&PROFILE/True/&ALERT_PATH
 Off:
-192.168.1.6:4556/&CAM/&TYPE/&PROFILE/False/&ALERT
+192.168.1.6:4556/&CAM/&TYPE/&PROFILE/False/&ALERT_PATH
 
 0.4.1
 Change to download images threading, don't thread first or single image, thread the rest
