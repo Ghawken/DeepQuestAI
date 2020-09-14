@@ -118,7 +118,7 @@ Enable within BlueIris plugin, the Broadcast setting
 
 ## Plugin Config Settings:
 
-![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStatePluginConfig1.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStatePluginConfig1.png)
+![https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStatePluginConfig1.png?raw=True](https://github.com/Ghawken/DeepQuestAI/blob/master/Images/DeepStatePluginConfig1a.png)
 
 IP Address:  IP address of computer where deepStackAI running, or localhost
 Port: Port of DeepStackAI service
