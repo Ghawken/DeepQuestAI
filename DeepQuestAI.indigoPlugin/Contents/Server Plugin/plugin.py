@@ -971,12 +971,16 @@ hair dryer, toothbrush'''
     def call_alertURL(self, alerturl, deepStateObject, confidence):
         self.logger.debug(u'call_alertURL'+unicode(alerturl))
         try:
-            confidence = "{:.0%}". format(confidence)  # round and add % - doesnt seem to bring icons though...
+            confidence = "{:.0%}". format(confidence)  # round and add % - doesnt seem to bring icons though...  ## icons must be DB entry
+            vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train']
+            if deepStateObject in vehicles:
+                deepStateObject = "vehicle"
             if alerturl == "":
                 self.logger.debug(u'Skipping Sending Alert URL - doesnt seem to exist')
                 return
           #  alerturl = alerturl + "DeepStateAlert_"+str(deepStateObject)
             alerturl = alerturl +  str(deepStateObject) + ":"+str(confidence)+"&flagclip"  #add flagclip
+          #  alerturl = alerturl + str(deepStateObject)  + "&flagclip"
             r = requests.get(alerturl, timeout=self.serverTimeout)
             if r.status_code == 200:
                 self.logger.debug("AlertURL successfully called: "+alerturl)
