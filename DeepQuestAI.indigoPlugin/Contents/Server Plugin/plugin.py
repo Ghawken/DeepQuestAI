@@ -634,6 +634,7 @@ hair dryer, toothbrush'''
         indigo.server.subscribeToBroadcast(kBroadcasterPluginId, u"broadcasterShutdown", u"broadcasterShutdown")
         indigo.server.subscribeToBroadcast(kBroadcasterPluginId, u"motionTrue", u"motionTrue")
 
+
         self.logger.debug(u'Starting DeepState send Thread:')
         ImageThread = threading.Thread(target=self.threadSendtodeepstate )
         ImageThread.setDaemon(True  )
@@ -960,20 +961,21 @@ hair dryer, toothbrush'''
                 cropped.save(filenameCrop)
                 image.save(filenameFull)
                 ## Call Alert URL
-                self.call_alertURL(alerturl,deepStateObject)
+                self.call_alertURL(alerturl,deepStateObject, confidence)
 
             self.triggerCheck(deepStateObject, cameraname, indigodeviceid, 'objectTrigger', confidence, external)
 
         except Exception as ex:
             self.logger.exception('Error Saving All Objects: ' + unicode(ex))
 
-    def call_alertURL(self, alerturl, deepStateObject):
+    def call_alertURL(self, alerturl, deepStateObject, confidence):
         self.logger.debug(u'call_alertURL'+unicode(alerturl))
         try:
             if alerturl == "":
                 self.logger.debug(u'Skipping Sending Alert URL - doesnt seem to exist')
                 return
-            alerturl = alerturl + "DeepStateAlert_"+str(deepStateObject)
+          #  alerturl = alerturl + "DeepStateAlert_"+str(deepStateObject)
+            alerturl = alerturl +  str(deepStateObject) + ":"+str(confidence)
             r = requests.get(alerturl, timeout=self.serverTimeout)
             if r.status_code == 200:
                 self.logger.debug("AlertURL successfully called: "+alerturl)
@@ -2108,7 +2110,7 @@ hair dryer, toothbrush'''
                 self.logger.debug(unicode(response))
             # self.listCameras[cameraname] = False  # set to false as already run.
 
-            vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train']
+            vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'truck']
             anyobjectfound = False
             if response['success'] == True:
                 self.mainProcessedImages = self.mainProcessedImages + 1
