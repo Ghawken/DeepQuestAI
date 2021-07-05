@@ -971,11 +971,12 @@ hair dryer, toothbrush'''
     def call_alertURL(self, alerturl, deepStateObject, confidence):
         self.logger.debug(u'call_alertURL'+unicode(alerturl))
         try:
+            confidence = "{:.0%}". format(confidence)  # round and add % - doesnt seem to bring icons though...
             if alerturl == "":
                 self.logger.debug(u'Skipping Sending Alert URL - doesnt seem to exist')
                 return
           #  alerturl = alerturl + "DeepStateAlert_"+str(deepStateObject)
-            alerturl = alerturl +  str(deepStateObject) + ":"+str(confidence)
+            alerturl = alerturl +  str(deepStateObject) + ":"+str(confidence)+"&flagclip"  #add flagclip
             r = requests.get(alerturl, timeout=self.serverTimeout)
             if r.status_code == 200:
                 self.logger.debug("AlertURL successfully called: "+alerturl)
@@ -2265,7 +2266,7 @@ hair dryer, toothbrush'''
             url = urlphoto.split('/')
             beginning = url[2]
             #eg. 'downstairs:paszsword@192.168.1.208:801'
-            alerturl = "http://"+str(beginning)+ "/" +'admin?camera='+str(cameraname)+ "&flagalert=1&memo="  ##add memo text at end...
+            alerturl = "http://"+str(beginning)+ "/" +'admin?camera='+str(cameraname)+ "&flagalert=3&memo="  ##add memo text at end...
             if self.debug3:
                 self.logger.debug(u"AlertURL:"+unicode(alerturl))
             return alerturl
