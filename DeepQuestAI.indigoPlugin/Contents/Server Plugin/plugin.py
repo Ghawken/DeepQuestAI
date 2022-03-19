@@ -4,7 +4,12 @@
 """
 Author: GlennNZ
 DeepQuestAI Plugin Take 1
+
+Python 3 only
+
 """
+import io
+
 global MajorProblem
 
 MajorProblem = 0
@@ -13,7 +18,17 @@ startingUp = False
 
 import datetime
 import time as t
-import urllib2
+
+try:
+    from urllib.parse import urlparse, urlencode
+    from urllib.request import urlopen, Request
+    from urllib.error import HTTPError
+except ImportError:
+    from urlparse import urlparse
+    from urllib import urlencode
+    from urllib2 import urlopen, Request, HTTPError
+
+#import urllib2
 import os
 import sys
 import shutil
@@ -22,7 +37,10 @@ import requests
 from shutil import copyfile
 
 from PIL import Image,ImageDraw,ImageFont
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+
+
+
+from http.server import BaseHTTPRequestHandler, HTTPServer
 #from SocketServer import ThreadingMixIn
 #from os import curdir, sep
 import subprocess
@@ -31,9 +49,10 @@ import plistlib
 import glob
 
 from contextlib import contextmanager
+from io import BytesIO
 
-import StringIO
-from Queue import *
+#import StringIO
+from queue import Queue #, heapq, deque
 import threading
 import uuid
 
@@ -207,7 +226,7 @@ hair dryer, toothbrush'''
             if not os.path.exists(self.saveDirectory):
                 os.makedirs(self.saveDirectory)
         except:
-            self.logger.error(u'Error Accessing Save Directory.  Using Default:'+unicode(self.folderLocation))
+            self.logger.error(u'Error Accessing Save Directory.  Using Default:'+str(self.folderLocation))
             self.saveDirectory = self.folderLocation
             self.pluginPrefs['directory'] = self.saveDirectory
             pass
@@ -221,7 +240,7 @@ hair dryer, toothbrush'''
                 if not os.path.exists(self.tempDirectory):
                     os.makedirs(self.tempDirectory)
         except:
-            self.logger.error(u'Error Accessing Temp Directory.  Using Default:'+unicode(self.folderLocation))
+            self.logger.error(u'Error Accessing Temp Directory.  Using Default:'+str(self.folderLocation))
             self.tempDirectory = self.folderLocation + 'Temp/'
             self.pluginPrefs['tempdirectory'] = self.tempDirectory
             pass
@@ -273,7 +292,7 @@ hair dryer, toothbrush'''
             self.debugLevel = valuesDict.get('showDebugLevel', "10")
             self.debugLog(u"User prefs saved.")
             self.API = valuesDict.get('API','')
-            #self.logger.error(unicode(valuesDict))
+            #self.logger.error(str(valuesDict))
             self.useLocal = valuesDict.get('useLocal', False)
             self.ipaddress = valuesDict.get('ipaddress', '')
             self.ipaddress2 = valuesDict.get('ipaddress2', '')
@@ -321,7 +340,7 @@ hair dryer, toothbrush'''
             #if pluginneedsrestart:
                 #self.restartPlugin()
 
-        self.logger.debug(unicode(valuesDict))
+        self.logger.debug(str(valuesDict))
         return True
     def generateMain(self,valuesDict):
 
@@ -333,7 +352,7 @@ hair dryer, toothbrush'''
 
         if FoundDevice == False:
             self.logger.info(u'No matching Main Device Found - creating one:')
-            self.logger.info(unicode(deviceName) + '  created Device')
+            self.logger.info(str(deviceName) + '  created Device')
             device = indigo.device.create(address=deviceName, deviceTypeId='DeepStateService', name=deviceName,
                                       protocol=indigo.kProtocol.Plugin, folder='DeepState AI')
             self.sleep(1)
@@ -361,11 +380,11 @@ hair dryer, toothbrush'''
                 objectName = dev.pluginProps['objectType']
                 if objectName =='other':
                     objectName = dev.pluginProps['objectOther']
-                self.logger.debug('Checking directory for ObjectType:' + unicode(objectName))
+                self.logger.debug('Checking directory for ObjectType:' + str(objectName))
                 self.createFolder(objectName)
 
         if dev.deviceTypeId== "DeepStateService":
-            #self.logger.error(unicode(dev))
+            #self.logger.error(str(dev))
             if dev.enabled:
                 stateList = [
                     {'key': 'deviceIsOnline', 'value': True},
@@ -449,7 +468,7 @@ hair dryer, toothbrush'''
         if not os.path.exists(self.saveDirectory+'/'+objectType):
             os.makedirs(self.saveDirectory+'/'+objectType)
             if self.debug2:
-                self.logger.debug('Created directory for new Object Type:'+unicode(objectType))
+                self.logger.debug('Created directory for new Object Type:'+str(objectType))
         return
 
     def ejectRAMdisk(self):
@@ -462,7 +481,7 @@ hair dryer, toothbrush'''
                 subprocess.check_output(['/usr/bin/hdiutil', 'detach', '/Volumes/DeepStateTemp'] )
 
         except Exception as ex:
-            self.logger.debug(u'Caught exception Ramdisk:'+unicode(ex))
+            self.logger.debug(u'Caught exception Ramdisk:'+str(ex))
             pass
 
     def unmountArchive(self):
@@ -470,7 +489,7 @@ hair dryer, toothbrush'''
         local_dir = self.saveDirectory + 'ARCHIVE'
         retcode = subprocess.call(["/sbin/umount", local_dir])
         if retcode != 0:
-            self.logger.debug("Unmount operation failed.  retcode:" + unicode(retcode))
+            self.logger.debug("Unmount operation failed.  retcode:" + str(retcode))
         else:
             self.logger.info(u'Archive successfully dismounted.')
             self.archiveMounted = False
@@ -481,17 +500,17 @@ hair dryer, toothbrush'''
         self.logger.debug(u'Mounting Archive for use whilst plugin running')
         remote_dir = self.archiveDirectory
         local_dir= self.saveDirectory+'ARCHIVE'
-        self.logger.debug('Mounting SMB path for archive use: remote_Dir:' + unicode(remote_dir) + '  local_Dir:' + unicode(local_dir))
+        self.logger.debug('Mounting SMB path for archive use: remote_Dir:' + str(remote_dir) + '  local_Dir:' + str(local_dir))
         local_dir = os.path.abspath(local_dir)
-        self.logger.debug('Mounting: Localdir:' + unicode(local_dir))
+        self.logger.debug('Mounting: Localdir:' + str(local_dir))
         retcode = subprocess.call(["/sbin/mount", "-t", "smbfs", remote_dir, local_dir])
 
         if retcode != 0:
-            self.logger.info("Mount operation failed. retcode:" + unicode(retcode))
+            self.logger.info("Mount operation failed. retcode:" + str(retcode))
             return False
         else:
             self.archiveMounted = True
-            self.logger.info(u'Archive SMB drive successfully mounted: '+unicode(remote_dir))
+            self.logger.info(u'Archive SMB drive successfully mounted: '+str(remote_dir))
             return True
 
     def copytoArchive(self):
@@ -515,29 +534,29 @@ hair dryer, toothbrush'''
                 # copy existing directory structure of image directories to archive
                 for dirpath, dirnames, filenames in os.walk(src):
                     if 'ARCHIVE' in dirpath or 'Temp' in dirpath:
-                        #self.logger.debug(u'Skip Archive/Temp directory for obvious reasons: DirPath:'+unicode(dirpath))
+                        #self.logger.debug(u'Skip Archive/Temp directory for obvious reasons: DirPath:'+str(dirpath))
                         continue
-                    self.logger.debug(u'Two days equals:' + unicode(two_days))
+                    self.logger.debug(u'Two days equals:' + str(two_days))
                     structure = os.path.join(dst, dirpath[len(src):])
                     if not os.path.isdir(structure):
                         os.mkdir(structure)
-                        self.logger.info(u'Archive: Creating directory: Structure: '+unicode(structure)+ u'  DirectoryName:'+unicode(dirnames))
+                        self.logger.info(u'Archive: Creating directory: Structure: '+str(structure)+ u'  DirectoryName:'+str(dirnames))
                     # create directories
                     if dirpath != src:
                     # usefilenames to copy
-                        self.logger.debug(u'dirpath:' + unicode(dirpath) + u' dirnames:' + unicode( dirnames) + u' and filenames:' + unicode(filenames))
+                        self.logger.debug(u'dirpath:' + str(dirpath) + u' dirnames:' + str( dirnames) + u' and filenames:' + str(filenames))
                         for f in filenames:
                             if str(f).startswith('.')==False:
                                 filetime = datetime.datetime.fromtimestamp(os.path.getmtime(os.path.join(dirpath, f)))
-                                #self.logger.debug(u'FileName:'+unicode(os.path.join(dirpath, f))+ u' and filetime:'+unicode(filetime))
+                                #self.logger.debug(u'FileName:'+str(os.path.join(dirpath, f))+ u' and filetime:'+str(filetime))
                                 if filetime >= two_days:
-                                    #self.logger.debug(u'Two days equals:' + unicode(two_days))
-                                    self.logger.debug(u'Skipping file...' + unicode( os.path.join(dirpath, f)) + u' and filetime:' + unicode(filetime))
+                                    #self.logger.debug(u'Two days equals:' + str(two_days))
+                                    self.logger.debug(u'Skipping file...' + str( os.path.join(dirpath, f)) + u' and filetime:' + str(filetime))
                                     # new file skip moving
                                 else:
                                     try:
 
-                                        self.logger.debug(u'Moving file...'+unicode(os.path.join(dirpath, f)) + u' and filetime:'+unicode(filetime))
+                                        self.logger.debug(u'Moving file...'+str(os.path.join(dirpath, f)) + u' and filetime:'+str(filetime))
                                         shutil.copy2(os.path.join(dirpath, f), structure)
                                         # use copy2 to copy datetime info and overwrite files if they already exists
                                         os.remove(os.path.join(dirpath, f))
@@ -579,16 +598,12 @@ hair dryer, toothbrush'''
             ['/usr/sbin/diskutil', 'erasevolume', 'hfsx', name, self.RAMdevice]
         )
 
-        self.logger.debug(u'createRAMdisk  :  self.RAMdevice:'+unicode(self.RAMdevice))
+        self.logger.debug(u'createRAMdisk  :  self.RAMdevice:'+str(self.RAMdevice))
+        self.RAMpath = plistlib.loads(subprocess.check_output(['/usr/sbin/diskutil', 'info', '-plist', self.RAMdevice]))
+        self.logger.debug(u'createRAMdisk  : self.RAMpath:' + str(self.RAMpath))
+        self.RAMpath = self.RAMpath['MountPoint']
 
-
-        self.RAMpath = plistlib.readPlistFromString(
-            subprocess.check_output(
-                ['/usr/sbin/diskutil', 'info', '-plist', self.RAMdevice]
-            )
-        )['MountPoint']
-
-        self.logger.debug(u'createRAMdisk  : self.RAMpath:' + unicode(self.RAMpath))
+        self.logger.debug(u'createRAMdisk  : self.RAMpath:' + str(self.RAMpath))
 
         self.logger.info(u'Please Wait 10 seconds before opening config Dialogs...')
         self.sleep(10)  # give time to finish creation of RAMDisk
@@ -717,7 +732,7 @@ hair dryer, toothbrush'''
                         errorDict['objectOther'] ='Objectname you have entered not within above examples'
                         return (False, valuesDict, errorDict)
 
-                    self.logger.debug(u'Creating Save Folder for this Object Type:'+unicode(valuesDict['objectOther']) )
+                    self.logger.debug(u'Creating Save Folder for this Object Type:'+str(valuesDict['objectOther']) )
                     self.createFolder(valuesDict['objectOther'])
 
             return (True, valuesDict, errorDict)
@@ -741,7 +756,7 @@ hair dryer, toothbrush'''
                         errorDict['objectOther'] ='Objectname you have entered not within above examples'
                         return (False, valuesDict, errorDict)
             if self.debug5:
-                self.logger.debug(u'Event Dict:'+unicode(valuesDict))
+                self.logger.debug(u'Event Dict:'+str(valuesDict))
             return (True, valuesDict, errorDict)
 
         except ValueError:
@@ -778,7 +793,7 @@ hair dryer, toothbrush'''
 
         except Exception as error:
             self.errorLog(u"Error refreshing devices. Please check settings.")
-            self.errorLog(unicode(error.message))
+            self.errorLog(str(error.message))
             return False
 
     def refreshDataForDev(self, dev):
@@ -840,18 +855,18 @@ hair dryer, toothbrush'''
         self.logger.debug(u'Generate Cameras Lists for Event')
         myArray = []
         if self.debug5:
-            self.logger.debug(u'self.deviceCamerstouse:' + unicode(self.deviceCamerastouse))
+            self.logger.debug(u'self.deviceCamerstouse:' + str(self.deviceCamerastouse))
         for dev in indigo.devices.itervalues("com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"):
 
             if dev.enabled:
                 if self.debug5:
-                    self.logger.debug(u'Checking dev.id:'+unicode(dev.id)+' and device name:'+unicode(dev.name))
+                    self.logger.debug(u'Checking dev.id:'+str(dev.id)+' and device name:'+str(dev.name))
                 if str(dev.id) in self.deviceCamerastouse:
                     if self.debug5:
-                        self.logger.debug(u'Update Camera: Add to List:'+unicode(dev.id))
+                        self.logger.debug(u'Update Camera: Add to List:'+str(dev.id))
                     myArray.append((dev.id,dev.name))
         if self.debug5:
-            self.logger.debug(unicode(myArray))
+            self.logger.debug(str(myArray))
         return myArray
 
 
@@ -933,7 +948,7 @@ hair dryer, toothbrush'''
             self.checkDevices('car', cameraname, filename, confidence, indigodeviceid)
             self.triggerCheck('car', cameraname, indigodeviceid, 'objectTrigger', confidence, external)
         except Exception as ex:
-            self.logger.debug('Error Saving to Vehicles: ' + unicode(ex))
+            self.logger.debug('Error Saving to Vehicles: ' + str(ex))
 
     def checkfaces2(self,  liveurlphoto, ipaddress, cameraname, image, indigodeviceid, confidence, x_min,x_max,y_min,y_max, external):
         self.logger.debug('Now checking for Faces 2/Cropping only....')
@@ -946,11 +961,11 @@ hair dryer, toothbrush'''
             self.triggerCheck('person', cameraname, indigodeviceid, 'objectTrigger', confidence, external)
 
         except Exception as ex:
-            self.logger.debug('Error Saving to Vehicles: ' + unicode(ex))
+            self.logger.debug('Error Saving to Vehicles: ' + str(ex))
 
     def checkallobjects(self, deepStateObject, liveurlphoto, ipaddress, cameraname, alerturl, image, imagefresh, indigodeviceid, confidence, x_min,x_max,y_min,y_max, external):
 
-        self.logger.debug('Now checking for All Objects only: Checking against:'+unicode(deepStateObject))
+        self.logger.debug('Now checking for All Objects only: Checking against:'+str(deepStateObject))
 
         try:
             filenameCrop = self.saveDirectory+deepStateObject+'/' + 'DeepState_'+deepStateObject+'_Crop_{}_{}.jpg'.format(cameraname, str(t.time()))
@@ -966,10 +981,10 @@ hair dryer, toothbrush'''
             self.triggerCheck(deepStateObject, cameraname, indigodeviceid, 'objectTrigger', confidence, external)
 
         except Exception as ex:
-            self.logger.exception('Error Saving All Objects: ' + unicode(ex))
+            self.logger.exception('Error Saving All Objects: ' + str(ex))
 
     def call_alertURL(self, alerturl, deepStateObject, confidence):
-        self.logger.debug(u'call_alertURL'+unicode(alerturl))
+        self.logger.debug(u'call_alertURL'+str(alerturl))
         try:
             confidence = "{:.0%}". format(confidence)  # round and add % - doesnt seem to bring icons though...  ## icons must be DB entry
             vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train']
@@ -985,12 +1000,12 @@ hair dryer, toothbrush'''
             if r.status_code == 200:
                 self.logger.debug("AlertURL successfully called: "+alerturl)
                 if self.debug3:
-                    self.logger.debug(unicode(r.text))
+                    self.logger.debug(str(r.text))
                 return
             else:
                 self.logger.debug("Error sending alertURL back to BI")
                 if self.debug3:
-                    self.logger.debug(unicode(r.text))
+                    self.logger.debug(str(r.text))
                 return
         # self.logger.debug(u'Yah Code 200....')
 
@@ -1013,7 +1028,7 @@ hair dryer, toothbrush'''
                 objectName = dev.pluginProps['objectType']
                 if objectName =='other':
                     objectName = dev.pluginProps['objectOther']
-                #self.logger.debug('Checking for ObjectType:' + unicode(objectName))
+                #self.logger.debug('Checking for ObjectType:' + str(objectName))
                 if objectName == objectname:
                     dev.updateStateOnServer('objectType', value=objectname)
                     dev.updateStateOnServer('cameraFound', value=cameraname)
@@ -1024,7 +1039,7 @@ hair dryer, toothbrush'''
                     dev.updateStateOnServer('date', value=update_time)
                     if str(indigodeviceid) in dev.pluginProps['deviceCamera']:  # check camera enabled, but update device states regardless
                         dev.updateStateOnServer('imageLink', value=filename)
-                        self.logger.debug(u"Image "+unicode(filename)+ " saved as Camera Selected in device State.")
+                        self.logger.debug(u"Image "+str(filename)+ " saved as Camera Selected in device State.")
                         return True
                     else:
                         dev.updateStateOnServer('imageLink', value="")
@@ -1038,12 +1053,12 @@ hair dryer, toothbrush'''
         urltosend = 'http://' + ipaddress + ":7188/v1/vision/face"
         try:
 
-            image_file = StringIO.StringIO()
+            image_file = io.BytesIO()
             cropped.save(image_file,'JPEG')
             image_file.seek(0)
 
             response = requests.post(urltosend, files={"image": image_file}, timeout=30).json()
-            self.logger.error(unicode(response))
+            self.logger.error(str(response))
             #self.listCameras[cameraname] = False  # set to false as already run.
 
             if response['success'] == True:
@@ -1059,7 +1074,7 @@ hair dryer, toothbrush'''
             self.triggerCheck('person', cameraname, 'objectTrigger')
 
         except Exception as ex:
-            self.logger.debug('Error sending to Deepstate: ' + unicode(ex))
+            self.logger.debug('Error sending to Deepstate: ' + str(ex))
             self.reply = False
 
     ##################  Triggers
@@ -1078,13 +1093,13 @@ hair dryer, toothbrush'''
     def triggerCheck(self, objectname, cameraname, indigodeviceid, event, confidence, external):
 
         if self.debug2:
-            self.logger.debug('triggerCheck run. Object:'+unicode(objectname)+' Camera:' + unicode(cameraname) + ' Event:' + unicode(event))
+            self.logger.debug('triggerCheck run. Object:'+str(objectname)+' Camera:' + str(cameraname) + ' Event:' + str(event))
         try:
             if self.pluginIsInitializing:
                 self.logger.info(u'Trigger: Ignore as Plugin Just started.')
                 return
 
-            for triggerId, trigger in sorted(self.triggers.iteritems()):
+            for triggerId, trigger in sorted(self.triggers.items()):
                 if self.debug5:
                     self.logger.debug("Checking Trigger %s (%s), Type: %s, CameraName: %s, Event: %s, Confidence:%s" % (
                     trigger.name, trigger.id, trigger.pluginTypeId, cameraname, event, confidence))
@@ -1103,29 +1118,29 @@ hair dryer, toothbrush'''
                                 self.logger.debug("===== Executing objectFound Trigger %s (%d) and confidence is %s" % (
                                     trigger.name, trigger.id, confidence))
                                 #if self.debug4:
-                                    #self.logger.debug(u'deviceCamera' + unicode(trigger.pluginProps['deviceCamera']))
-                                    #self.logger.debug(u'indigodeviceid:' + unicode(indigodeviceid))
+                                    #self.logger.debug(u'deviceCamera' + str(trigger.pluginProps['deviceCamera']))
+                                    #self.logger.debug(u'indigodeviceid:' + str(indigodeviceid))
                             if trigger.id not in self.triggersTriggered:
                                 # no previous triggers
                                 # add to self.triggersTriggered
                                 self.triggersTriggered[trigger.id] = t.time()  ## add utc timestamp
                                 ## run trigger as no previous times of running
                                 if self.debug5:
-                                    self.logger.debug(u'self.triggersTriggered:'+unicode(self.triggersTriggered))
+                                    self.logger.debug(u'self.triggersTriggered:'+str(self.triggersTriggered))
                                     self.logger.debug(u'Running Trigger as just added.')
                                 indigo.trigger.execute(trigger)
                             else:
                                 if self.debug5:
-                                    self.logger.debug(u'Trigger.ID found and self.triggersTriggered:' + unicode(self.triggersTriggered))
+                                    self.logger.debug(u'Trigger.ID found and self.triggersTriggered:' + str(self.triggersTriggered))
                                 if float(t.time()) >=  float(self.triggersTriggered[trigger.id]) +int( trigger.pluginProps.get('dontretrigger',10) ):  ## request already running
                                     # okay more than 10 seconds ago, re-run trigger and update time
                                     self.triggersTriggered[trigger.id] = t.time()  ## add utc timestamp
                                     if self.debug5:
-                                        self.logger.debug(u'self.triggersTriggered:' + unicode(self.triggersTriggered))
+                                        self.logger.debug(u'self.triggersTriggered:' + str(self.triggersTriggered))
                                     indigo.trigger.execute(trigger)
                                 else:
                                     if self.debug5:
-                                        self.logger.debug(u'Trigger :'+ unicode(trigger.name) + u' not run again, as current time='+unicode(t.time())+u' and time past run='+unicode(self.triggersTriggered[trigger.id]))
+                                        self.logger.debug(u'Trigger :'+ str(trigger.name) + u' not run again, as current time='+str(t.time())+u' and time past run='+str(self.triggersTriggered[trigger.id]))
                                     # add requesting running and continue
 
                 elif self.debug2:
@@ -1138,7 +1153,7 @@ hair dryer, toothbrush'''
 
     def threadDownloadImage(self, path, url):
         if self.debug2:
-            self.logger.debug(u'threadDownloadImages called.'+u' & Number of Active Threads:' + unicode(
+            self.logger.debug(u'threadDownloadImages called.'+u' & Number of Active Threads:' + str(
                     threading.activeCount()))
         try:
              # add timer and move to chunk download...
@@ -1153,10 +1168,10 @@ hair dryer, toothbrush'''
                             self.logger.error(u'Download Image Taking too long.  Aborted.  ?Network issue')
                             break
                     if self.debug2:
-                        self.logger.debug(u'Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
+                        self.logger.debug(u'Saved Image attempt for:'+str(path)+u' in [seconds]:'+str(t.time()-start))
              else:
                  self.logger.debug(u'Issue Downloading Image. Failed.')
-                 self.logger.debug(u'Requests: status code:'+unicode(r.status_code)+ u' try one more time..')
+                 self.logger.debug(u'Requests: status code:'+str(r.status_code)+ u' try one more time..')
                  self.sleep(1)
                  start = t.time()
                  r2 = requests.get(url, stream=True, timeout=self.serverTimeout)
@@ -1169,7 +1184,7 @@ hair dryer, toothbrush'''
                                 self.logger.error(u'Download Image Taking too long.  Aborted.  ?Network issue')
                                 break
                         if self.debug2:
-                            self.logger.debug(u'2nd Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
+                            self.logger.debug(u'2nd Saved Image attempt for:'+str(path)+u' in [seconds]:'+str(t.time()-start))
                  else:
                      self.logger.debug(u'2nd attempt failed.')
 
@@ -1183,7 +1198,7 @@ hair dryer, toothbrush'''
             self.sleep(5)
             pass
         except IOError as ex:
-            self.logger.debug(u'threadDownloadImage has an IO Error:'+unicode(ex))
+            self.logger.debug(u'threadDownloadImage has an IO Error:'+str(ex))
             pass
 
         except:
@@ -1221,17 +1236,17 @@ hair dryer, toothbrush'''
                 ## add velocity setting as well
                 velocity = timedelay - pasttimedelay
                 if self.debug2:
-                    self.logger.debug(u'Thread:SendtoDeepState: Processing: Velocity here:'+unicode(velocity))
+                    self.logger.debug(u'Thread:SendtoDeepState: Processing: Velocity here:'+str(velocity))
                 self.previoustimeDelay = timedelay ## update to new timedelay value
                 #self.quesizeold = int(self.que.qsize())
 
                 #quesizedelta = self.quesize - int(self.que.qsize())
-                #self.logger.error(u'Thread:SendtoDeepState: Processing: Que Size: '+unicode(self.quesize)+u' and delta:'+unicode(quesizedelta))
+                #self.logger.error(u'Thread:SendtoDeepState: Processing: Que Size: '+str(self.quesize)+u' and delta:'+str(quesizedelta))
 
 
                 if self.debug2:
-                    self.logger.debug(u'Thread:SendtoDeepstate: Processing next item in que: Cameraname:'+unicode(cameraname)+', image file:'+unicode(path)+', from IndigoID:'+unicode(indigodeviceid))
-                    self.logger.debug(u'Thread:SendtoDeepState: Processing items now '+unicode(timedelay)+u' seconds later than image captured.')
+                    self.logger.debug(u'Thread:SendtoDeepstate: Processing next item in que: Cameraname:'+str(cameraname)+', image file:'+str(path)+', from IndigoID:'+str(indigodeviceid))
+                    self.logger.debug(u'Thread:SendtoDeepState: Processing items now '+str(timedelay)+u' seconds later than image captured.')
 
                 if timedelay > int(self.timeLimit)/2:
                     if alreadysuperchargeSkip:
@@ -1245,18 +1260,18 @@ hair dryer, toothbrush'''
                         try:
                             os.remove(path)
                         except Exception as ex:
-                            self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
+                            self.logger.debug(u'Caught Issue Deleting File:' + str(ex))
                         self.que.task_done()
                         self.quesize = int(self.que.qsize())
                         continue
 
                 if timedelay> int(self.timeLimit) and velocity > -5:  ## if more than 60 seconds delayed in processing images, skip current item and delete temp image
-                    self.logger.info(u'Thread:SendtoDeepstate:  Processing items now '+unicode(self.timeLimit)+u' seconds behind image capture, and velocity >-5 positive.  Aborting this image until resolved.')
+                    self.logger.info(u'Thread:SendtoDeepstate:  Processing items now '+str(self.timeLimit)+u' seconds behind image capture, and velocity >-5 positive.  Aborting this image until resolved.')
                     self.mainSkippedImages = self.mainSkippedImages +1
                     try:
                         os.remove(path)
                     except Exception as ex:
-                        self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
+                        self.logger.debug(u'Caught Issue Deleting File:' + str(ex))
                     self.que.task_done()
                     self.quesize = int(self.que.qsize())
                     continue
@@ -1276,25 +1291,25 @@ hair dryer, toothbrush'''
                     try:
                         os.remove(path)
                     except Exception as ex:
-                        self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
+                        self.logger.debug(u'Caught Issue Deleting File:' + str(ex))
                     self.que.task_done()
                     self.quesize = int(self.que.qsize())
                     continue
 
                 if self.debug3:
-                    self.logger.debug(u'Sending to :'+unicode(urltosend))
+                    self.logger.debug(u'Sending to :'+str(urltosend))
                 liveurlphoto = open(path, 'rb').read()
                 image = Image.open(path)
                 imagefresh = Image.open(path)
                 bytesImage = os.path.getsize(path)
 
                 if self.debug3:
-                    self.logger.debug(u'Size of Current Image:'+unicode(bytesImage))
+                    self.logger.debug(u'Size of Current Image:'+str(bytesImage))
 
                 self.reply = True
                 response = requests.post(urltosend, files={"image": liveurlphoto}, timeout=15).json()
                 if self.debug1:
-                    self.logger.debug(unicode(response))
+                    self.logger.debug(str(response))
                 #self.listCameras[cameraname] = False  # set to false as already run.
 
                 vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train']
@@ -1310,7 +1325,7 @@ hair dryer, toothbrush'''
                         carfound = False
                         label = object["label"]
                         #if self.debug4:
-                            #self.logger.error(u'Checking Found item:'+unicode(label))
+                            #self.logger.error(u'Checking Found item:'+str(label))
                         y_max = int(object["y_max"])
                         y_min = int(object["y_min"])
                         x_max = int(object["x_max"])
@@ -1320,7 +1335,7 @@ hair dryer, toothbrush'''
                         ## if mainconfidence less than completely skip this object
                         if confidence < float(self.confidenceMain):
                             if self.debug4:
-                                self.logger.debug(u'Low Confidence for Object:'+unicode(label)+' so skipping.  Checking next.')
+                                self.logger.debug(u'Low Confidence for Object:'+str(label)+' so skipping.  Checking next.')
                             continue
 
                         objectfound = True
@@ -1353,7 +1368,7 @@ hair dryer, toothbrush'''
                 try:
                     os.remove(path)
                 except Exception as ex:
-                    self.logger.debug(u'Error deleting file'+unicode(ex))
+                    self.logger.debug(u'Error deleting file'+str(ex))
 
             except self.StopThread:
                 self.logger.debug(u'Self.Stop Thread called')
@@ -1361,7 +1376,7 @@ hair dryer, toothbrush'''
                 pass
 
             except requests.exceptions.Timeout as ex:
-                self.logger.debug(u'threadaddtoQue has timed out and cannot connect to DeepStateAI:'+unicode(ex))
+                self.logger.debug(u'threadaddtoQue has timed out and cannot connect to DeepStateAI:'+str(ex))
 
                 self.deepstatetimeouts = self.deepstatetimeouts + 1
                 if self.deepstatetimeouts >= 5:
@@ -1370,7 +1385,7 @@ hair dryer, toothbrush'''
                 try:
                     os.remove(path)
                 except Exception as ex:
-                    self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
+                    self.logger.debug(u'Caught Issue Deleting File:' + str(ex))
                 self.que.task_done()
                 self.quesize = int(self.que.qsize())
                 pass
@@ -1381,30 +1396,30 @@ hair dryer, toothbrush'''
                 try:
                     os.remove(path)
                 except Exception as ex:
-                    self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
+                    self.logger.debug(u'Caught Issue Deleting File:' + str(ex))
                 self.que.task_done()
                 self.quesize = int(self.que.qsize())
                 self.sleep(1)
                 pass
 
             except IOError as ex:
-                self.logger.debug(u'Thread:SendtoDeepstate: IO Error: Probably file failed downloading...'+unicode(ex))
+                self.logger.debug(u'Thread:SendtoDeepstate: IO Error: Probably file failed downloading...'+str(ex))
                 self.deepstateIssue = True
                 try:
                     os.remove(path)
                 except Exception as ex:
-                    self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
+                    self.logger.debug(u'Caught Issue Deleting File:' + str(ex))
                 self.que.task_done()
                 self.quesize = int(self.que.qsize())
                 pass
 
             except Exception as ex:
-                self.logger.exception(u'Thread:SendtoDeepstate:Error sending to Deepstate: ' + unicode(ex))
+                self.logger.exception(u'Thread:SendtoDeepstate:Error sending to Deepstate: ' + str(ex))
                 self.deepstateIssue = True
                 try:
                     os.remove(path)
                 except Exception as ex:
-                    self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
+                    self.logger.debug(u'Caught Issue Deleting File:' + str(ex))
                     pass
                 self.que.task_done()
                 self.quesize = int(self.que.qsize())
@@ -1412,7 +1427,7 @@ hair dryer, toothbrush'''
 
     def imageVerify(self, path):
         if self.debug4:
-            self.logger.debug(u'imageVerify called for image Path:'+unicode(path))
+            self.logger.debug(u'imageVerify called for image Path:'+str(path))
         try:
             img = Image.open(path)
             img.verify()
@@ -1423,13 +1438,13 @@ hair dryer, toothbrush'''
             return True
         except Exception as ex:
             if self.debug3:
-                self.logger.debug(u'Exception: Image Verification Failed:'+unicode(ex))
+                self.logger.debug(u'Exception: Image Verification Failed:'+str(ex))
             return False
 
 
     def checkCameraAG(self,action):
         self.logger.debug(u'checkCameraAG called')
-        self.logger.debug(unicode(action))
+        self.logger.debug(str(action))
         objectFound = False
         firstobjectFound = False
         secondobjectFound = False
@@ -1457,7 +1472,7 @@ hair dryer, toothbrush'''
         firsturl = self.checkCameraSingleUrls(url, confidenceLevel,objecttype)
 
         if firsturl == "error":
-            self.logger.info(u"Error with 1st URL request. Check Settings. URL:"+unicode(url))
+            self.logger.info(u"Error with 1st URL request. Check Settings. URL:"+str(url))
             return
         elif firsturl =="objectFound":
             firstobjectFound = True
@@ -1482,7 +1497,7 @@ hair dryer, toothbrush'''
                 return
             secondurl = self.checkCameraSingleUrls(url2, confidenceLevel, objecttype)
             if secondurl == "error":
-                self.logger.info(u"Error with 2nd URL request. Check Settings. URL:"+unicode(url2))
+                self.logger.info(u"Error with 2nd URL request. Check Settings. URL:"+str(url2))
                 return
             elif secondurl =="objectFound":
                 secondobjectFound = True
@@ -1506,7 +1521,7 @@ hair dryer, toothbrush'''
                 return
             thirdurl = self.checkCameraSingleUrls(url3, confidenceLevel, objecttype)
             if thirdurl == "error":
-                self.logger.info(u"Error with 3rd URL request. Check Settings. URL:"+unicode(url3))
+                self.logger.info(u"Error with 3rd URL request. Check Settings. URL:"+str(url3))
                 return
             elif thirdurl =="objectFound":
                 thirdobjectFound = True
@@ -1530,7 +1545,7 @@ hair dryer, toothbrush'''
                 return
             fourthurl = self.checkCameraSingleUrls(url4, confidenceLevel, objecttype)
             if fourthurl == "error":
-                self.logger.info(u"Error with 4th URL request. Check Settings. URL:"+unicode(url4))
+                self.logger.info(u"Error with 4th URL request. Check Settings. URL:"+str(url4))
                 return
             elif fourthurl == "objectFound":
                 fourthobjectFound = True
@@ -1554,7 +1569,7 @@ hair dryer, toothbrush'''
                 return
             fifthurl = self.checkCameraSingleUrls(url5, confidenceLevel, objecttype)
             if fifthurl == "error":
-                self.logger.info(u"Error with 5th URL request. Check Settings. URL:"+unicode(url5))
+                self.logger.info(u"Error with 5th URL request. Check Settings. URL:"+str(url5))
                 return
             elif fifthurl == "objectFound":
                 fifthobjectFound = True
@@ -1587,9 +1602,9 @@ hair dryer, toothbrush'''
         try:
             device = indigo.devices[int(deviceid)]
             camshortName = device.states['optionValue']
-            self.logger.debug('Camera Short Name:'+unicode(camshortName))
+            self.logger.debug('Camera Short Name:'+str(camshortName))
             endurl = "http://"+str(BIusername)+":"+str(BIpassword)+"@"+str(BIserver)+":"+str(BIport)+"/image/"+str(camshortName)
-            self.logger.debug("Sending to "+unicode(endurl))
+            self.logger.debug("Sending to "+str(endurl))
             return endurl
 
         except:
@@ -1598,7 +1613,7 @@ hair dryer, toothbrush'''
 
     def checkBICameraAG(self, action):
         self.logger.debug(u'checkBICameraAG called')
-        self.logger.debug(unicode(action))
+        self.logger.debug(str(action))
         objectFound = False
         firstobjectFound = False
         secondobjectFound = False
@@ -1634,7 +1649,7 @@ hair dryer, toothbrush'''
         firsturl = self.checkCameraSingleUrls(url, confidenceLevel, objecttype)
 
         if firsturl == "error":
-            self.logger.info(u"Error with 1st URL request. Check Settings. URL:" + unicode(url))
+            self.logger.info(u"Error with 1st URL request. Check Settings. URL:" + str(url))
             return
         elif firsturl == "objectFound":
             firstobjectFound = True
@@ -1660,7 +1675,7 @@ hair dryer, toothbrush'''
                 return
             secondurl = self.checkCameraSingleUrls(url2, confidenceLevel, objecttype)
             if secondurl == "error":
-                self.logger.info(u"Error with 2nd URL request. Check Settings. URL:" + unicode(url2))
+                self.logger.info(u"Error with 2nd URL request. Check Settings. URL:" + str(url2))
                 return
             elif secondurl == "objectFound":
                 secondobjectFound = True
@@ -1685,7 +1700,7 @@ hair dryer, toothbrush'''
                 return
             thirdurl = self.checkCameraSingleUrls(url3, confidenceLevel, objecttype)
             if thirdurl == "error":
-                self.logger.info(u"Error with 3rd URL request. Check Settings. URL:" + unicode(url3))
+                self.logger.info(u"Error with 3rd URL request. Check Settings. URL:" + str(url3))
                 return
             elif thirdurl == "objectFound":
                 thirdobjectFound = True
@@ -1710,7 +1725,7 @@ hair dryer, toothbrush'''
                 return
             fourthurl = self.checkCameraSingleUrls(url4, confidenceLevel, objecttype)
             if fourthurl == "error":
-                self.logger.info(u"Error with 4th URL request. Check Settings. URL:" + unicode(url4))
+                self.logger.info(u"Error with 4th URL request. Check Settings. URL:" + str(url4))
                 return
             elif fourthurl == "objectFound":
                 fourthobjectFound = True
@@ -1735,7 +1750,7 @@ hair dryer, toothbrush'''
                 return
             fifthurl = self.checkCameraSingleUrls(url5, confidenceLevel, objecttype)
             if fifthurl == "error":
-                self.logger.info(u"Error with 5th URL request. Check Settings. URL:" + unicode(url5))
+                self.logger.info(u"Error with 5th URL request. Check Settings. URL:" + str(url5))
                 return
             elif fifthurl == "objectFound":
                 fifthobjectFound = True
@@ -1776,8 +1791,8 @@ hair dryer, toothbrush'''
 
     ## Actions.xml
     def checkCameraSingleUrls(self,url, confidenceLevel, objecttype ):
-        self.logger.debug(u'checkCameraAG called for Url:'+unicode(url)+u" and object "+unicode(objecttype))
-       # self.logger.debug(unicode(action))
+        self.logger.debug(u'checkCameraAG called for Url:'+str(url)+u" and object "+str(objecttype))
+       # self.logger.debug(str(action))
        # confidenceLevel = action.props.get('confidence', 0.7)
        # url = action.props.get('imageurl', '')
        # objecttype = action.props.get('objectType', '')
@@ -1796,7 +1811,7 @@ hair dryer, toothbrush'''
 
         path = self.folderLocationTemp + 'ActionCalledFile_{}'.format(uuid.uuid4())
         if self.debug2:
-            self.logger.debug(u'checkCameraSingleURL Download and Run called.'+u' & Number of Active Threads:' + unicode(
+            self.logger.debug(u'checkCameraSingleURL Download and Run called.'+u' & Number of Active Threads:' + str(
                 threading.activeCount()))
         try:
              # add timer and move to chunk download...
@@ -1810,10 +1825,10 @@ hair dryer, toothbrush'''
                             self.logger.error(u'checkCameraSingleURL Download Image Taking too long.  Aborted.  ?Network issue')
                             break
                     if self.debug2:
-                        self.logger.debug(u'checkCameraSingleURL Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
+                        self.logger.debug(u'checkCameraSingleURL Saved Image attempt for:'+str(path)+u' in [seconds]:'+str(t.time()-start))
             else:
                  self.logger.debug(u'checkCameraSingleURL Issue Downloading Image. Failed.')
-                 self.logger.debug(u'checkCameraSingleURL Requests: status code:'+unicode(r.status_code)+ u' try one more time..')
+                 self.logger.debug(u'checkCameraSingleURL Requests: status code:'+str(r.status_code)+ u' try one more time..')
                  self.sleep(1)
                  start = t.time()
                  r2 = requests.get(url, stream=True, timeout=self.serverTimeout)
@@ -1826,7 +1841,7 @@ hair dryer, toothbrush'''
                                 self.logger.error(u'checkCameraSingleURL Download Image Taking too long.  Aborted.  ?Network issue')
                                 break
                         if self.debug2:
-                            self.logger.debug(u'checkCameraSingleURL 2nd Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
+                            self.logger.debug(u'checkCameraSingleURL 2nd Saved Image attempt for:'+str(path)+u' in [seconds]:'+str(t.time()-start))
                  else:
                      self.logger.debug(u'checkCameraSingleURL 2nd attempt failed.  Sorry ended.')
                      return "error"
@@ -1837,16 +1852,16 @@ hair dryer, toothbrush'''
             return 'error'
 
         except requests.exceptions.ConnectionError:
-            self.logger.info(u'Action Group has connection error to  BlueIris and cannot connect to url:'+unicode(url))
+            self.logger.info(u'Action Group has connection error to  BlueIris and cannot connect to url:'+str(url))
             return 'error'
         except requests.exceptions.InvalidURL:
-            self.logger.debug(u'Action Group Connection Error to BlueIris returned Invalid URL for :'+unicode(url))
+            self.logger.debug(u'Action Group Connection Error to BlueIris returned Invalid URL for :'+str(url))
             return 'error'
         except IOError as ex:
-            self.logger.debug(u'Action Group has an IO Error:'+unicode(ex))
+            self.logger.debug(u'Action Group has an IO Error:'+str(ex))
             return 'error'
         except requests.exceptions.SSLError as ex:
-            self.logger.debug(u'Action Group has an SSL Error:'+unicode(ex))
+            self.logger.debug(u'Action Group has an SSL Error:'+str(ex))
             return 'error'
         except:
             self.logger.exception(u'Caught Exception in threadDownloadImage')
@@ -1868,20 +1883,20 @@ hair dryer, toothbrush'''
                 try:
                     os.remove(path)
                 except Exception as ex:
-                    self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
+                    self.logger.debug(u'Caught Issue Deleting File:' + str(ex))
                 self.logger.info(u'File Image Date incorrect? Check URL passwords.  Aborted.')
                 return "error"
             if self.debug3:
-                self.logger.debug(u'Sending to :' + unicode(urltosend))
+                self.logger.debug(u'Sending to :' + str(urltosend))
             liveurlphoto = open(path, 'rb').read()
            ##     imagefresh = Image.open(path)
             bytesImage = os.path.getsize(path)
 
             if self.debug3:
-                self.logger.debug(u'Size of Current Image:' + unicode(bytesImage))
+                self.logger.debug(u'Size of Current Image:' + str(bytesImage))
             response = requests.post(urltosend, files={"image": liveurlphoto}, timeout=15).json()
             if self.debug1:
-                self.logger.debug(unicode(response))
+                self.logger.debug(str(response))
             anyobjectfound = False
             if response['success'] == True:
                 self.mainProcessedImages = self.mainProcessedImages + 1
@@ -1889,7 +1904,7 @@ hair dryer, toothbrush'''
                 self.mainTimeLastRun = t.strftime('%c')
                 self.deepstateIssue = False
                 self.deepstatetimeouts = 0
-                self.logger.debug(unicode(response['predictions']))
+                self.logger.debug(str(response['predictions']))
                 objectFound = False
                 for object in response["predictions"]:
                     label = object["label"]
@@ -1897,40 +1912,40 @@ hair dryer, toothbrush'''
                      ## if mainconfidence less than completely skip this object
                     if confidence < float(self.confidenceMain):
                         if self.debug4:
-                            self.logger.debug(u'Low Confidence for Object:' + unicode(label) + ' so skipping.  Checking next.')
+                            self.logger.debug(u'Low Confidence for Object:' + str(label) + ' so skipping.  Checking next.')
                         continue
                     if objecttype==label:
                         objectFound = True
-                        self.logger.info(u"DeepState Found Object: "+unicode(objecttype)+u' with confidence of :'+unicode(confidence)+ u" within URL:"+unicode(url))
+                        self.logger.info(u"DeepState Found Object: "+str(objecttype)+u' with confidence of :'+str(confidence)+ u" within URL:"+str(url))
                         return "objectFound"
                 ## Need to check here as checking for absence as well, and need to see all predictions
                 # No object found
                 try:
                     os.remove(path)
                 except Exception as ex:
-                    self.logger.debug(u'Error deleting file' + unicode(ex))
+                    self.logger.debug(u'Error deleting file' + str(ex))
                 return "noobjectFound"
             else:
                 self.logger.info(u"Error from Deepstate for this uRL")
                 try:
                     os.remove(path)
                 except Exception as ex:
-                    self.logger.debug(u'Error deleting file' + unicode(ex))
+                    self.logger.debug(u'Error deleting file' + str(ex))
                 return 'error'
 
         except requests.exceptions.Timeout:
-            self.logger.info(u'Action Group Connection has timed out and cannot connect to Deep State Service at:'+unicode(urltosend))
+            self.logger.info(u'Action Group Connection has timed out and cannot connect to Deep State Service at:'+str(urltosend))
             return 'error'
 
         except requests.exceptions.ConnectionError:
             self.logger.debug(u'Action Group Connection connectServer has a Connection Error and cannot connect.')
             return 'error'
         except requests.exceptions.InvalidURL:
-            self.logger.debug(u'Action Group Connection Error to DeepState returned Invalid URL for :'+unicode(urltosend))
+            self.logger.debug(u'Action Group Connection Error to DeepState returned Invalid URL for :'+str(urltosend))
             return 'error'
 
         except IOError as ex:
-            self.logger.debug(u'downloadandaddtoque has an IO Error:'+unicode(ex))
+            self.logger.debug(u'downloadandaddtoque has an IO Error:'+str(ex))
             return 'error'
 
         except:
@@ -1954,7 +1969,7 @@ hair dryer, toothbrush'''
         confidenceLevel = action.props.get('confidence',0.7)
         self.confidenceMain = confidenceLevel
         self.pluginPrefs['confidenceMain']= self.confidenceMain
-        self.logger.debug(u'Main Confidence level now set to :'+unicode(self.confidenceMain))
+        self.logger.debug(u'Main Confidence level now set to :'+str(self.confidenceMain))
         return
 
     def setCameras(self, action):
@@ -1962,7 +1977,7 @@ hair dryer, toothbrush'''
         deviceCameras = action.props.get('deviceCamera',0.7)
         self.deviceCamerastouse = deviceCameras
         self.pluginPrefs['deviceCamera']= self.deviceCamerastouse
-        self.logger.debug(u'Cameras Enabled now now set to :'+unicode(self.deviceCamerastouse))
+        self.logger.debug(u'Cameras Enabled now now set to :'+str(self.deviceCamerastouse))
         return
 
     def setSupercharge(self, action):
@@ -1974,7 +1989,7 @@ hair dryer, toothbrush'''
         self.pluginPrefs['superCharge']= self.superCharge
         self.pluginPrefs['superChargedelay'] = self.superChargedelay
         self.pluginPrefs['superChargeimageno'] = self.superChargeimageno
-        self.logger.debug(u'SuperCharge :'+unicode(self.superCharge)+'  Delay:'+unicode(self.superChargedelay) +u' and Image Number:'+unicode(self.superChargeimageno) )
+        self.logger.debug(u'SuperCharge :'+str(self.superCharge)+'  Delay:'+str(self.superChargedelay) +u' and Image Number:'+str(self.superChargeimageno) )
         return
 
     def sendtoDeepState(self, action):
@@ -1998,12 +2013,12 @@ hair dryer, toothbrush'''
                 ## create a temporary file from the one given - otherwise will be deleted
                 item = deepstateitem(path, 1, 'ExternalActionFile', "", t.time(), True, False ,'')
                 if self.debug1:
-                    self.logger.debug(u'Putting item into DeepState Que: Item:' + unicode(item))
+                    self.logger.debug(u'Putting item into DeepState Que: Item:' + str(item))
                 self.que.put(item)
 
 
         except Exception as ex:
-            self.logger.exception(u'Caught Exception:  Some thing wrong with File Path or URL'+unicode(ex))
+            self.logger.exception(u'Caught Exception:  Some thing wrong with File Path or URL'+str(ex))
             return
         return
 
@@ -2032,11 +2047,11 @@ hair dryer, toothbrush'''
                                         u'Downloading URL Download Image Taking too long.  Aborted.  ?Network issue')
                                     break
                             if self.debug2:
-                                self.logger.debug(u'Donwload URL Saved Image attempt for:' + unicode(
-                                    path) + u' in [seconds]:' + unicode(t.time() - start))
+                                self.logger.debug(u'Donwload URL Saved Image attempt for:' + str(
+                                    path) + u' in [seconds]:' + str(t.time() - start))
                     else:
                         self.logger.debug(u'Download URL Issue Downloading Image. Failed.')
-                        self.logger.debug(u'DownloadURL Requests: status code:' + unicode(
+                        self.logger.debug(u'DownloadURL Requests: status code:' + str(
                             r.status_code) + u' try one more time..')
                         self.sleep(1)
                         start = t.time()
@@ -2051,8 +2066,8 @@ hair dryer, toothbrush'''
                                             u'Download URL Download Image Taking too long.  Aborted.  ?Network issue')
                                         break
                                 if self.debug2:
-                                    self.logger.debug(u'Download URL 2nd Saved Image attempt for:' + unicode(
-                                        path) + u' in [seconds]:' + unicode(t.time() - start))
+                                    self.logger.debug(u'Download URL 2nd Saved Image attempt for:' + str(
+                                        path) + u' in [seconds]:' + str(t.time() - start))
                         else:
                             self.logger.info(u'Download URL 2nd attempt failed.  Aborted.')
                             return
@@ -2067,7 +2082,7 @@ hair dryer, toothbrush'''
                     return
 
                 except IOError as ex:
-                    self.logger.info(u'Download URL has an IO Error:' + unicode(ex))
+                    self.logger.info(u'Download URL has an IO Error:' + str(ex))
                     return
 
                 except:
@@ -2096,23 +2111,23 @@ hair dryer, toothbrush'''
                 try:
                     os.remove(path)
                 except Exception as ex:
-                    self.logger.debug(u'Caught Issue Deleting File:' + unicode(ex))
+                    self.logger.debug(u'Caught Issue Deleting File:' + str(ex))
                 return
 
             if self.debug3:
-                self.logger.debug(u'Sending to :' + unicode(urltosend))
+                self.logger.debug(u'Sending to :' + str(urltosend))
             liveurlphoto = open(path, 'rb').read()
             image = Image.open(path)
             imagefresh = Image.open(path)
             bytesImage = os.path.getsize(path)
 
             if self.debug3:
-                self.logger.debug(u'Size of Current Image:' + unicode(bytesImage))
+                self.logger.debug(u'Size of Current Image:' + str(bytesImage))
 
             self.reply = True
             response = requests.post(urltosend, files={"image": liveurlphoto}, timeout=15).json()
             if self.debug1:
-                self.logger.debug(unicode(response))
+                self.logger.debug(str(response))
             # self.listCameras[cameraname] = False  # set to false as already run.
 
             vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'truck']
@@ -2137,7 +2152,7 @@ hair dryer, toothbrush'''
                     if confidence < float(self.confidenceMain):
                         if self.debug4:
                             self.logger.debug(
-                                u'Low Confidence for Object:' + unicode(label) + ' so skipping.  Checking next.')
+                                u'Low Confidence for Object:' + str(label) + ' so skipping.  Checking next.')
                         continue
 
                     objectfound = True
@@ -2158,12 +2173,12 @@ hair dryer, toothbrush'''
             try:
                 os.remove(path)
             except Exception as ex:
-                self.logger.debug(u'Error deleting file'+unicode(ex))
+                self.logger.debug(u'Error deleting file'+str(ex))
 
             return
 
         except Exception as ex:
-            self.logger.exception(u'Caught Exception:  Something wrong with File Path or URL'+unicode(ex))
+            self.logger.exception(u'Caught Exception:  Something wrong with File Path or URL'+str(ex))
             return
         return
 
@@ -2184,13 +2199,13 @@ hair dryer, toothbrush'''
             if str(indigodeviceid) not in self.deviceCamerastouse:
                 #if self.debug1:
                     #self.logger.debug('Camera not enabled within DeepState Config Settings/Ignored.')
-                #self.logger.debug(unicode(self.deviceCamerastouse))
+                #self.logger.debug(str(self.deviceCamerastouse))
                 return
 
             if typetrigger == 'AUDIO':
                 if self.debug1:
                     self.logger.debug('AUDIO Trigger Settings/Ignored.')
-                #self.logger.debug(unicode(self.deviceCamerastouse))
+                #self.logger.debug(str(self.deviceCamerastouse))
                 return
             if self.debug3:
                 self.logger.debug(u"received Camera motionTrue message: %s" % (arg))
@@ -2202,12 +2217,12 @@ hair dryer, toothbrush'''
             return
 
         except Exception as ex:
-            self.logger.exception(u'Exception caught in motion true:'+unicode(ex))
+            self.logger.exception(u'Exception caught in motion true:'+str(ex))
 
 
     def threadDownloadandaddtoque(self, path, url, cameraname,indigodeviceid, external, alertimage):
         if self.debug2:
-            self.logger.debug(u'threadDownloadandaddtoque called.'+u' & Number of Active Threads:' + unicode(
+            self.logger.debug(u'threadDownloadandaddtoque called.'+u' & Number of Active Threads:' + str(
                 threading.activeCount()))
         try:
              # add timer and move to chunk download...
@@ -2221,10 +2236,10 @@ hair dryer, toothbrush'''
                             self.logger.error(u'downloadandaddtoque Download Image Taking too long.  Aborted.  ?Network issue')
                             break
                     if self.debug2:
-                        self.logger.debug(u'downloadandaddtoque Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
+                        self.logger.debug(u'downloadandaddtoque Saved Image attempt for:'+str(path)+u' in [seconds]:'+str(t.time()-start))
              else:
                  self.logger.debug(u'downloadandaddtoque Issue Downloading Image. Failed.')
-                 self.logger.debug(u'downloadandaddtoque Requests: status code:'+unicode(r.status_code)+ u' try one more time..')
+                 self.logger.debug(u'downloadandaddtoque Requests: status code:'+str(r.status_code)+ u' try one more time..')
                  self.sleep(1)
                  start = t.time()
                  r2 = requests.get(url, stream=True, timeout=self.serverTimeout)
@@ -2237,7 +2252,7 @@ hair dryer, toothbrush'''
                                 self.logger.error(u'downloadandaddtoque Download Image Taking too long.  Aborted.  ?Network issue')
                                 break
                         if self.debug2:
-                            self.logger.debug(u'downloadandaddtoque 2nd Saved Image attempt for:'+unicode(path)+u' in [seconds]:'+unicode(t.time()-start))
+                            self.logger.debug(u'downloadandaddtoque 2nd Saved Image attempt for:'+str(path)+u' in [seconds]:'+str(t.time()-start))
                  else:
                      self.logger.debug(u'downloadandaddtoque 2nd attempt failed.')
                      return
@@ -2246,7 +2261,7 @@ hair dryer, toothbrush'''
              urlalertflag = self.get_urlalertflag(url, cameraname)
              item = deepstateitem(path, indigodeviceid, cameraname, urlalertflag, t.time(), external, False, alertimage)
              if self.debug1:
-                 self.logger.debug(u'downloadandaddtoque Putting item into DeepState Que: Item:' + unicode(item))
+                 self.logger.debug(u'downloadandaddtoque Putting item into DeepState Que: Item:' + str(item))
              self.que.put(item)
              return
 
@@ -2258,7 +2273,7 @@ hair dryer, toothbrush'''
             self.sleep(5)
 
         except IOError as ex:
-            self.logger.debug(u'downloadandaddtoque has an IO Error:'+unicode(ex))
+            self.logger.debug(u'downloadandaddtoque has an IO Error:'+str(ex))
 
         except:
             self.logger.exception(u'downloadandaddtoque Caught Exception in threadDownloadImage')
@@ -2272,7 +2287,7 @@ hair dryer, toothbrush'''
             #eg. 'downstairs:paszsword@192.168.1.208:801'
             alerturl = "http://"+str(beginning)+ "/" +'admin?camera='+str(cameraname)+ "&flagalert=3&memo="  ##add memo text at end...
             if self.debug3:
-                self.logger.debug(u"AlertURL:"+unicode(alerturl))
+                self.logger.debug(u"AlertURL:"+str(alerturl))
             return alerturl
         except:
             self.logger.debug(u'Exception with get_urlalertflag')
@@ -2281,8 +2296,8 @@ hair dryer, toothbrush'''
 
     def threadaddtoQue(self, urlphoto,cameraname,indigodeviceid, external, alertimage):
         if self.debug3:
-            self.logger.debug(u'Thread:AdddtoQue called.' + u' & Number of Active Threads:' + unicode(
-                threading.activeCount())+ u' and current que:'+unicode(self.quesize))
+            self.logger.debug(u'Thread:AdddtoQue called.' + u' & Number of Active Threads:' + str(
+                threading.activeCount())+ u' and current que:'+str(self.quesize))
         if int(self.quesize)==0:
             self.deepstateIssue = False
             ## if nothing in que set to False
@@ -2312,7 +2327,7 @@ hair dryer, toothbrush'''
                 #self.sleep(0.5)
                 #item = deepstateitem(path, indigodeviceid, cameraname, t.time(),external , False, alertimage)
                 #if self.debug1:
-                    #self.logger.debug(u'Putting item into DeepState Que: Item:'+unicode(item))
+                    #self.logger.debug(u'Putting item into DeepState Que: Item:'+str(item))
                 #self.que.put(item)
 
             else:
@@ -2327,9 +2342,9 @@ hair dryer, toothbrush'''
                 item = deepstateitem(path, indigodeviceid, cameraname, urlalertflag, t.time(), external, False, alertimage)
                 self.que.put(item)
                 if self.debug1:
-                    self.logger.debug(u'Putting SuperCharge.1 item into DeepState Que: Item:' + unicode(item))
+                    self.logger.debug(u'Putting SuperCharge.1 item into DeepState Que: Item:' + str(item))
                 for n in numberofseconds:
-                    self.logger.debug(u'************** Downloading Images:  Image:'+unicode(n) +u' for Camera:'+unicode(cameraname) )
+                    self.logger.debug(u'************** Downloading Images:  Image:'+str(n) +u' for Camera:'+str(cameraname) )
                     path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
                     ImageThread2 = threading.Thread(target=self.threadDownloadandaddtoque, args=[path, urlphoto, cameraname, indigodeviceid, True, alertimage])
                     ImageThread2.setDaemon(True)
@@ -2339,15 +2354,15 @@ hair dryer, toothbrush'''
                     #self.sleep(0.5)#sleep for the delay
                     #item = deepstateitem(path, indigodeviceid, cameraname, t.time(),external, True, alertimage)
                     #if self.debug1:
-                        #self.logger.debug(u'Putting item into DeepState Que: Item.Path:'+unicode(item.path))
+                        #self.logger.debug(u'Putting item into DeepState Que: Item.Path:'+str(item.path))
                     #self.que.put(item)
 
             self.quesize = int(self.que.qsize())
             if self.debug2:
-                self.logger.debug(u'Thread:AddtoQue:  Number in que:' + unicode(self.quesize))
+                self.logger.debug(u'Thread:AddtoQue:  Number in que:' + str(self.quesize))
 
             if self.quesize> 50:
-                self.logger.info(u'Currently Size of DeepStateAI processing Que is '+unicode(self.quesize)+u'. Consider your settings if this continues.')
+                self.logger.info(u'Currently Size of DeepStateAI processing Que is '+str(self.quesize)+u'. Consider your settings if this continues.')
             return
 
         except self.StopThread:
@@ -2382,7 +2397,7 @@ class httpHandler(BaseHTTPRequestHandler):
                 self.plugin.debugLog(u'New Http Handler thread:'+threading.currentThread().getName()+", total threads: "+str(threading.activeCount()))
             BaseHTTPRequestHandler.__init__(self, *args)
         except Exception as ex:
-            self.plugin.logger.debug(u'httpHandler init caught Exception'+unicode(ex))
+            self.plugin.logger.debug(u'httpHandler init caught Exception'+str(ex))
             pass
 
     def date_sortfiles(self,path):
@@ -2393,7 +2408,7 @@ class httpHandler(BaseHTTPRequestHandler):
             # return newish first
             return files
         except Exception as ex:
-            self.plugin.logger.debug(u'Error in Data_SortFiles'+unicode(ex))
+            self.plugin.logger.debug(u'Error in Data_SortFiles'+str(ex))
             return ''
 
     def do_GET(self):
@@ -2401,10 +2416,10 @@ class httpHandler(BaseHTTPRequestHandler):
         try:
 
             if self.plugin.debug4:
-                self.plugin.logger.debug(u'Html Server: do_get: self.path = '+unicode(self.path) )
-                #self.plugin.logger.debug(u'Html Server: do_get:self.path[1:-5]:'+unicode(self.path[1:-5]) )
-                #self.plugin.logger.debug(u'Html Server: do_get:self.path[1:8]:' + unicode(self.path[1:8]))
-                #self.plugin.logger.debug(u'Html Server: do_get:self.path[9:-5]:' + unicode(self.path[9:-5]))
+                self.plugin.logger.debug(u'Html Server: do_get: self.path = '+str(self.path) )
+                #self.plugin.logger.debug(u'Html Server: do_get:self.path[1:-5]:'+str(self.path[1:-5]) )
+                #self.plugin.logger.debug(u'Html Server: do_get:self.path[1:8]:' + str(self.path[1:8]))
+                #self.plugin.logger.debug(u'Html Server: do_get:self.path[9:-5]:' + str(self.path[9:-5]))
 
             if self.path[1:8]=='archive' and self.plugin.archiveMounted:
                 if self.plugin.debug4:
@@ -2424,7 +2439,7 @@ class httpHandler(BaseHTTPRequestHandler):
                             # empty
                             self.plugin.HTMLlistFiles = self.date_sortfiles(self.plugin.saveDirectory + 'ARCHIVE/' + objectName + '/' + 'DeepState_' + objectName + '_Full*.jpg')
                     if self.plugin.debug4:
-                        self.plugin.logger.debug(u'd_Get: Html ObjectName:' + unicode(objectName))
+                        self.plugin.logger.debug(u'd_Get: Html ObjectName:' + str(objectName))
                     # ignore the full/crop bit
                     # just serve the full one
                     self.send_response(200)
@@ -2434,9 +2449,9 @@ class httpHandler(BaseHTTPRequestHandler):
 
                     if self.plugin.HTMLimageNo >= len(self.plugin.HTMLlistFiles):
                         self.plugin.HTMLimageNo = 0
-                    # self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
+                    # self.plugin.logger.debug(u'listFiles:'+str(listFiles))
                     if self.plugin.debug4:
-                        self.plugin.logger.debug(u'self.plugin.imageNo =' + unicode(self.plugin.HTMLimageNo))
+                        self.plugin.logger.debug(u'self.plugin.imageNo =' + str(self.plugin.HTMLimageNo))
 
                     if self.plugin.HTMLlistFiles:
                         file = open(self.plugin.HTMLlistFiles[self.plugin.HTMLimageNo], 'rb')
@@ -2468,7 +2483,7 @@ class httpHandler(BaseHTTPRequestHandler):
                         # empty
                         self.plugin.HTMLlistFiles = self.date_sortfiles(self.plugin.saveDirectory + objectName + '/' + 'DeepState_' + objectName + '_Full*.jpg')
                 if self.plugin.debug4:
-                    self.plugin.logger.debug(u'd_Get: Html ObjectName:'+unicode(objectName))
+                    self.plugin.logger.debug(u'd_Get: Html ObjectName:'+str(objectName))
                 # ignore the full/crop bit
                 # just serve the full one
                 self.send_response(200)
@@ -2479,9 +2494,9 @@ class httpHandler(BaseHTTPRequestHandler):
 
                 if self.plugin.HTMLimageNo >= len(self.plugin.HTMLlistFiles):
                     self.plugin.HTMLimageNo = 0
-                #self.plugin.logger.debug(u'listFiles:'+unicode(listFiles))
+                #self.plugin.logger.debug(u'listFiles:'+str(listFiles))
                 if self.plugin.debug4:
-                    self.plugin.logger.debug(u'self.plugin.imageNo =' + unicode(self.plugin.HTMLimageNo))
+                    self.plugin.logger.debug(u'self.plugin.imageNo =' + str(self.plugin.HTMLimageNo))
 
                 if self.plugin.HTMLlistFiles:
                     file = open(self.plugin.HTMLlistFiles[self.plugin.HTMLimageNo], 'rb')
@@ -2501,4 +2516,4 @@ class httpHandler(BaseHTTPRequestHandler):
         except IOError:
             self.plugin.logger.debug(u'IOError: Exception:')
         except Exception as ex:
-            self.plugin.logger.debug(u'HTML Server: do_Get: Caught Exception'+unicode(ex))
+            self.plugin.logger.debug(u'HTML Server: do_Get: Caught Exception'+str(ex))
