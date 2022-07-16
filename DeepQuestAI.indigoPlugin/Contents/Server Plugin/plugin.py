@@ -1112,35 +1112,36 @@ hair dryer, toothbrush'''
                     if str(objectName)== str(objectname):
                         triggerconfidence = trigger.pluginProps.get('confidence',0.6)
 
-                        if str(indigodeviceid) in trigger.pluginProps['deviceCamera'] and float(confidence) >= float(triggerconfidence) or (external == True and float(confidence>=float(triggerconfidence))):
-                            # check if cameraname within list - although might be device ID
-                            if self.debug5:
-                                self.logger.debug("===== Executing objectFound Trigger %s (%d) and confidence is %s" % (
-                                    trigger.name, trigger.id, confidence))
-                                #if self.debug4:
-                                    #self.logger.debug(u'deviceCamera' + str(trigger.pluginProps['deviceCamera']))
-                                    #self.logger.debug(u'indigodeviceid:' + str(indigodeviceid))
-                            if trigger.id not in self.triggersTriggered:
-                                # no previous triggers
-                                # add to self.triggersTriggered
-                                self.triggersTriggered[trigger.id] = t.time()  ## add utc timestamp
-                                ## run trigger as no previous times of running
+                        if str(indigodeviceid) in trigger.pluginProps['deviceCamera']:
+                            if float(confidence) >= float(triggerconfidence) or (external == True and float(confidence>=float(triggerconfidence))):
+                                # check if cameraname within list - although might be device ID
                                 if self.debug5:
-                                    self.logger.debug(u'self.triggersTriggered:'+str(self.triggersTriggered))
-                                    self.logger.debug(u'Running Trigger as just added.')
-                                indigo.trigger.execute(trigger)
-                            else:
-                                if self.debug5:
-                                    self.logger.debug(u'Trigger.ID found and self.triggersTriggered:' + str(self.triggersTriggered))
-                                if float(t.time()) >=  float(self.triggersTriggered[trigger.id]) +int( trigger.pluginProps.get('dontretrigger',10) ):  ## request already running
-                                    # okay more than 10 seconds ago, re-run trigger and update time
+                                    self.logger.debug("===== Executing objectFound Trigger %s (%d) and confidence is %s" % (
+                                        trigger.name, trigger.id, confidence))
+                                    #if self.debug4:
+                                        #self.logger.debug(u'deviceCamera' + str(trigger.pluginProps['deviceCamera']))
+                                        #self.logger.debug(u'indigodeviceid:' + str(indigodeviceid))
+                                if trigger.id not in self.triggersTriggered:
+                                    # no previous triggers
+                                    # add to self.triggersTriggered
                                     self.triggersTriggered[trigger.id] = t.time()  ## add utc timestamp
+                                    ## run trigger as no previous times of running
                                     if self.debug5:
-                                        self.logger.debug(u'self.triggersTriggered:' + str(self.triggersTriggered))
+                                        self.logger.debug(u'self.triggersTriggered:'+str(self.triggersTriggered))
+                                        self.logger.debug(u'Running Trigger as just added.')
                                     indigo.trigger.execute(trigger)
                                 else:
                                     if self.debug5:
-                                        self.logger.debug(u'Trigger :'+ str(trigger.name) + u' not run again, as current time='+str(t.time())+u' and time past run='+str(self.triggersTriggered[trigger.id]))
+                                        self.logger.debug(u'Trigger.ID found and self.triggersTriggered:' + str(self.triggersTriggered))
+                                    if float(t.time()) >=  float(self.triggersTriggered[trigger.id]) +int( trigger.pluginProps.get('dontretrigger',10) ):  ## request already running
+                                        # okay more than 10 seconds ago, re-run trigger and update time
+                                        self.triggersTriggered[trigger.id] = t.time()  ## add utc timestamp
+                                        if self.debug5:
+                                            self.logger.debug(u'self.triggersTriggered:' + str(self.triggersTriggered))
+                                        indigo.trigger.execute(trigger)
+                                    else:
+                                        if self.debug5:
+                                            self.logger.debug(u'Trigger :'+ str(trigger.name) + u' not run again, as current time='+str(t.time())+u' and time past run='+str(self.triggersTriggered[trigger.id]))
                                     # add requesting running and continue
 
                 elif self.debug2:
