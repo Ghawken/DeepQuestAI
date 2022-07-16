@@ -1091,7 +1091,6 @@ hair dryer, toothbrush'''
 
 
     def triggerCheck(self, objectname, cameraname, indigodeviceid, event, confidence, external):
-
         if self.debug2:
             self.logger.debug('triggerCheck run. Object:'+str(objectname)+' Camera:' + str(cameraname) + ' Event:' + str(event))
         try:
@@ -1110,16 +1109,20 @@ hair dryer, toothbrush'''
                     if objectName == 'other':
                         objectName = trigger.pluginProps['objectOther']
                     if str(objectName)== str(objectname):
+                        if self.debug5:
+                            self.logger.debug(f"Matching ObjectName Found:  Full Trigger Props \n\n{trigger}\n")
                         triggerconfidence = trigger.pluginProps.get('confidence',0.6)
-                        if float( float(confidence) >= float(triggerconfidence)):
+                        #triggercameras = trigger.pluginPros.get('deviceCamera',[])
+                        if float(confidence) >= float(triggerconfidence):
                             if (str(indigodeviceid) in trigger.pluginProps['deviceCamera']) or ( external == True ):
                                     # check if cameraname within list - although might be device ID
                                 if self.debug5:
                                     self.logger.debug("===== Executing objectFound Trigger %s (%d) and confidence is %s" % (
                                         trigger.name, trigger.id, confidence))
-                                    #if self.debug4:
-                                        #self.logger.debug(u'deviceCamera' + str(trigger.pluginProps['deviceCamera']))
-                                        #self.logger.debug(u'indigodeviceid:' + str(indigodeviceid))
+                                if self.debug5:
+                                    self.logger.debug(f"deviceCameraList:{trigger.pluginProps['deviceCamera']}")
+                                    self.logger.debug(u'indigodeviceid:' + str(indigodeviceid))
+                                    self.logger.debug(f"External {external}")
                                 if trigger.id not in self.triggersTriggered:
                                     # no previous triggers
                                     # add to self.triggersTriggered
@@ -2348,7 +2351,7 @@ hair dryer, toothbrush'''
                 for n in numberofseconds:
                     self.logger.debug(u'************** Downloading Images:  Image:'+str(n) +u' for Camera:'+str(cameraname) )
                     path = self.folderLocationTemp + 'TempFile_{}'.format(uuid.uuid4())
-                    ImageThread2 = threading.Thread(target=self.threadDownloadandaddtoque, args=[path, urlphoto, cameraname, indigodeviceid, True, alertimage])
+                    ImageThread2 = threading.Thread(target=self.threadDownloadandaddtoque, args=[path, urlphoto, cameraname, indigodeviceid, False, alertimage])
                     ImageThread2.setDaemon(True)
                     ImageThread2.start()
                     self.sleep(float(self.superChargedelay))
