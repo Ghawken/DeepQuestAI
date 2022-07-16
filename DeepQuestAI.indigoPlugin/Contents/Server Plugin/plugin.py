@@ -1111,10 +1111,9 @@ hair dryer, toothbrush'''
                         objectName = trigger.pluginProps['objectOther']
                     if str(objectName)== str(objectname):
                         triggerconfidence = trigger.pluginProps.get('confidence',0.6)
-
-                        if str(indigodeviceid) in trigger.pluginProps['deviceCamera']:
-                            if float(confidence) >= float(triggerconfidence) or (external == True and float(confidence>=float(triggerconfidence))):
-                                # check if cameraname within list - although might be device ID
+                        if float( float(confidence) >= float(triggerconfidence)):
+                            if (str(indigodeviceid) in trigger.pluginProps['deviceCamera']) or ( external == True ):
+                                    # check if cameraname within list - although might be device ID
                                 if self.debug5:
                                     self.logger.debug("===== Executing objectFound Trigger %s (%d) and confidence is %s" % (
                                         trigger.name, trigger.id, confidence))
@@ -1143,7 +1142,9 @@ hair dryer, toothbrush'''
                                         if self.debug5:
                                             self.logger.debug(u'Trigger :'+ str(trigger.name) + u' not run again, as current time='+str(t.time())+u' and time past run='+str(self.triggersTriggered[trigger.id]))
                                     # add requesting running and continue
-
+                            else:
+                                self.logger.debug("===== Trigger Found, but Camera not selected.  Not Run.  objectFound Trigger %s (%d) and confidence is %s" % (
+                                    trigger.name, trigger.id, confidence))
                 elif self.debug2:
                     self.logger.debug(
                         "Not Run Trigger Type %s (%d), %s" % (trigger.name, trigger.id, trigger.pluginTypeId))
