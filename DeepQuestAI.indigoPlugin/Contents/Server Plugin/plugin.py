@@ -2501,7 +2501,7 @@ class httpHandler(BaseHTTPRequestHandler):
             self.plugin.logger.debug(u'httpHandler init caught Exception'+str(ex))
             pass
 
-    def date_sortfiles_old(self,path):
+    def date_sortfiles(self,path):
         try:
             self.plugin.logger.debug(u'Date_Sort Files called...')
             files = list(filter(os.path.isfile,glob.glob(path)))
@@ -2513,9 +2513,10 @@ class httpHandler(BaseHTTPRequestHandler):
             return ''
 
 
-    def date_sortfiles(self,path):
+    def date_sortfiles_old(self,path):
         try:
             self.plugin.logger.debug(f'Date_Sort Files called... Path:{path}')
+
             os.chdir(path)
             files = sorted(filter(os.path.isfile, os.listdir('.')), key=os.path.getmtime)
 #            files = list(filter(os.path.isfile,glob.glob(path)))
