@@ -1026,6 +1026,7 @@ hair dryer, toothbrush'''
 
     def call_alertURL(self, alerturl, deepStateObject, confidence):
         self.logger.debug(u'call_alertURL'+str(alerturl))
+        deepStateObject = str(deepStateObject).lower()
         try:
             confidence = "{:.0%}". format(confidence)  # round and add % - doesnt seem to bring icons though...  ## icons must be DB entry
             vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train', 'truck', 'vehicle']
@@ -1375,7 +1376,7 @@ hair dryer, toothbrush'''
                     self.deepstatetimeouts = 0
                     for object in response["predictions"]:
                         carfound = False
-                        label = object["label"]
+                        label = str(object["label"]).lower()
                         #if self.debug4:
                             #self.logger.error(u'Checking Found item:'+str(label))
                         y_max = int(object["y_max"])
@@ -2240,7 +2241,7 @@ hair dryer, toothbrush'''
                 self.deepstatetimeouts = 0
                 for object in response["predictions"]:
                     carfound = False
-                    label = object["label"]
+                    label = str(object["label"]).lower()
                     y_max = int(object["y_max"])
                     y_min = int(object["y_min"])
                     x_max = int(object["x_max"])
@@ -2516,9 +2517,11 @@ class httpHandler(BaseHTTPRequestHandler):
     def date_sortfiles_old(self,path):
         try:
             self.plugin.logger.debug(f'Date_Sort Files called... Path:{path}')
-
-            os.chdir(path)
-            files = sorted(filter(os.path.isfile, os.listdir('.')), key=os.path.getmtime)
+            path2 = os.path.dirname(path)
+            obj = os.scandir(path2)
+            entries = sorted(os.scandir(path2), key=lambda ent: ent.stat().st_mtime)
+            #os.chdir(path2)
+            #files = sorted(filter(os.path.isfile, os.listdir('.')), key=os.path.getmtime)
 #            files = list(filter(os.path.isfile,glob.glob(path)))
  #           files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
             # return newish first
