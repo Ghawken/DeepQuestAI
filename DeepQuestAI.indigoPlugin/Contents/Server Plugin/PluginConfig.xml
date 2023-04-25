@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <PluginConfig>
 
-    <Field id="infoLabel0" type="label" fontColor="black" alignText="right" >
+    <Field id="infoLabel0" type="label" fontColor="green" alignText="right" >
         <Label>DeepQuestAI Plugin</Label>
     </Field>
 
-    <Field id="space0" type="label" fontColor="black" fontSize="small" alignText="right">
+    <Field id="space0" type="label" fontColor="green" fontSize="small" alignText="right">
         <Label>Developed by: GlennNZ</Label>
     </Field>
 
@@ -48,7 +48,7 @@
                     default = ''>
 				<Label>Enter Archive Directory:</Label>
 	</Field>
-  <Field id="spacea2" type="label" fontSize="small" fontColor="darkgray">
+  <Field id="spacea2" type="label" fontSize="small" fontColor="blue">
     <Label>
         The Directory for Saved Images and for Archived >24hours images.
         Default Save location is:
@@ -64,6 +64,25 @@
 
     </Label>
   </Field>
+        <Field id="sep49newoneagain" type="separator"/>
+             <Field id="useCustomModel" type="checkbox" tooltip="Use Custom Models" Default="false">
+        <Label>Use Custom Models</Label>
+        <Description>Enable</Description>
+             </Field>
+      <Field id="custommodelsinfo" type="label" fontSize="small" fontColor="blue" >
+    <Label>
+        This is an advanced setting for CodeProject.AI that enables use of custom models
+        There is a Action of the Plugin to change the model.  eg. at Night use Dark Models
+        Setup the connection details of AI instance before enabling, as needs to connect
+        to update what models are available.
+    </Label>
+      </Field>
+             <Field id="customModelselected" type="menu" rows="6" visibleBindingId="useCustomModel" hidden="false" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+                <Label>Custom Model to use:</Label>
+                <List class="self" method="myCustomModelGenerator"/>
+            </Field>
+
+    <Field id="sep49newone" type="separator"/>
          <Field id="useRAMdisk" type="checkbox" tooltip="Create and use a 256MB Ram disk for all Temp files" Default="false">
         <Label>Use RamDisk</Label>
         <Description>Enable</Description>
@@ -76,7 +95,7 @@
                      >
 				<Label>Enter Temp Directory:</Label>
 	</Field>
-  <Field id="spaceab2" type="label" fontSize="small" fontColor="darkgray" >
+  <Field id="spaceab2" type="label" fontSize="small" fontColor="blue" >
     <Label>
         The Directory for Temp Files -
         NB: Contents are deleted at Startup, so don't use a shared folder.
@@ -112,7 +131,7 @@
             >
 				<Label>Enter your Port:</Label>
 			</Field>
-<Field id="spacedesa2" type="label" fontSize="small" fontColor="darkgray">
+<Field id="spacedesa2" type="label" fontSize="small" fontColor="blue">
     <Label>
         Enabling this option will enable you to send Action Calls/from Action Groups triggers
         to a 2nd DeepState Service.
@@ -132,7 +151,7 @@
 				<Title>Generate Main Device</Title>
 				<CallbackMethod>generateMain</CallbackMethod>
 	</Field>
-    <Field id="info56" type="label" fontSize="small" fontColor="darkgray">
+    <Field id="info56" type="label" fontSize="small" fontColor="blue">
     <Label>
         The above Button Generates the DeepState Main Device
         This reports currently activity and usage of the Deepstate
@@ -145,7 +164,7 @@
                 <Label>Enabled Camera(s)</Label>
                 <List class="indigo.devices" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"/>
             </Field>
-  <Field id="spaceacc2" type="label" fontSize="small" fontColor="darkgray">
+  <Field id="spaceacc2" type="label" fontSize="small" fontColor="blue">
     <Label>
         Master list of Enabled Cameras, use control to select multiple.
         Individual triggers,actions etc can select from this list individual camera or cameras
@@ -167,7 +186,7 @@
         <Label>SuperCharge Detection Seconds Apart (secs) </Label>
         <Description>seconds</Description>
              </Field>
-    <Field id="info2" type="label" fontSize="small" fontColor="darkgray" >
+    <Field id="info2" type="label" fontSize="small" fontColor="blue" >
     <Label>
         The above setting SuperCharges Detection, use cautiously depending
         on Cameras enabled.
@@ -187,10 +206,11 @@
         <Label>Time to allow before Aborting Image seconds </Label>
         <Description></Description>
              </Field>
-    <Field id="info33" type="label" fontSize="small" fontColor="darkgray">
+    <Field id="info33" type="label" fontSize="small" fontColor="blue">
     <Label>
         The above setting is the time between image taken and image being processed
         that is allowed to pass before, skipping, aborting, deleting image
+
         Defaults to 60 seconds
         eg. if Image processing 60 seconds behind image capture will abort until
         catches up
@@ -206,7 +226,7 @@
         <Label>Main Confidence Level 0-1 eg. 0.7 </Label>
         <Description>Ignore everything below this level</Description>
              </Field>
-    <Field id="info3" type="label" fontSize="small" fontColor="darkgray" >
+    <Field id="info3" type="label" fontSize="small" fontColor="blue" >
     <Label>
         The above setting sets confidence level for everything.
         Nothing below this level will be saved/triggered or
@@ -219,7 +239,7 @@
         <Label>Main Image Scale 1-100 </Label>
         <Description>Scale of Image to Use/Save</Description>
              </Field>
-    <Field id="info4" type="label" fontSize="small" fontColor="darkgray">
+    <Field id="info4" type="label" fontSize="small" fontColor="blue">
     <Label>
         The above setting sets image scale to use for DeepState
         Uses BlueIris to scale image as per setting above
@@ -238,16 +258,18 @@
         <Description>Http Server Port Defaults to 4142</Description>
              </Field>
 
-    <Field id="info1" type="label" fontSize="small" fontColor="darkgray" >
+    <Field id="info1" type="label" fontSize="small" fontColor="blue" >
     <Label>
-        The above setting enables the Plugins 2nd function that of a Html server,serving recently created images for use in Control Pages.
-        Enables use of http://IndigoIP:4142/car.html or
-        /person.html or
-        /tv.html ANY
-        deepstateobject and
+        The above setting enables the Plugins 2nd function that of a Html server,
+        serving recently created images for use in Control Pages.
+
+        Enables use of http://IndigoIP:4142/car.html or /person.html or /tv.html ANY
+        ANY deepstateobject
+        and archive
         http://IndigoIP:4142/archive/car.html etc as above
 
-        This will show most recent images of the selected, found examples, with every refresh will show next image etc.etc.
+        This will show most recent images of the selected, found examples, with every refresh
+        will show next image etc.etc.
 
         Action Group within plugin to return to Image 0 - most recent.
         If going from Disabled -> Enabled will need plugin restarted to correctly function.

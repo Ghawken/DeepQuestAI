@@ -37,7 +37,7 @@ import requests
 from shutil import copyfile
 
 from PIL import Image,ImageDraw,ImageFont
-
+import json
 
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -210,7 +210,14 @@ hair dryer, toothbrush'''
         self.saveDirectory = self.pluginPrefs.get('directory', '')
         self.archiveDirectory = self.pluginPrefs.get('archivedirectory', '')
         self.tempDirectory = self.pluginPrefs.get('tempdirectory','')
+
+        self.usecustomModel = self.pluginPrefs.get("useCustomModel", False)
+        self.custommodelselected = self.pluginPrefs.get("customModelselected", "default")
         # default below
+        if self.custommodelselected == "default":
+            self.usecustomModel = False
+            self.pluginPrefs["useCustomModel"] = False
+
         self.folderLocation = MAChome + "Documents/Indigo-DeepQuestAI/"
         #self.folderLocationFaces = MAChome + "Documents/Indigo-DeepQuestAI/Faces/"
         #self.folderLocationCars = MAChome + "Documents/Indigo-DeepQuestAI/Cars/"
@@ -313,6 +320,14 @@ hair dryer, toothbrush'''
             self.imageScale = valuesDict.get('imageScale', 100)
             self.superChargeimageno = valuesDict.get('superChargeimageno', 3)
             self.timeLimit = valuesDict.get('timeLimit', 60)
+
+            self.usecustomModel = valuesDict.get("useCustomModel", False)
+            self.custommodelselected = valuesDict.get("customModelselected", "default")
+
+            if self.custommodelselected == "default":
+                self.usecustomModel = False
+                valuesDict["useCustomModel"] = False
+                self.pluginPrefs["useCustomModel"] = False
 
             self.superChargedelay = valuesDict.get('superChargedelay', 3)
             self.port = valuesDict.get('port', '7188')
@@ -766,6 +781,32 @@ hair dryer, toothbrush'''
             self.logger.exception(u'Caught Error in Event Validate')
             return (False, valuesDict, errorDict)
 
+    ## Generate PluginConfig List
+    def myCustomModelGenerator(self, filter="", valuesDict=None, typeId="", targetId=0):
+        # From the example above, filter = “stuff”
+        # You can pass anything you want in the filter for any purpose
+        # Create an array where each entry is a list - the first item is
+        # the value attribute and last is the display string that will
+        # show up in the control. All parameters are read-only.
+        try:
+            urltosend = 'http://' + self.ipaddress + ":" + self.port + "/v1/vision/custom/list"
+            model_list = [("default", "Default. No Custom Model.")]
+            self.logger.debug(f"Using Url {urltosend} to check for custom model list")
+            getx = requests.post(urltosend, timeout=10)
+            if getx.status_code == 200:
+                result_json = json.loads(getx.text)
+                self.logger.debug(f"result json {result_json}")
+                if 'models' in result_json:
+                    models = result_json["models"]
+                    for model in models:
+                        model_list.append( (f"{model}", f"{model}") )
+            else:
+                self.logger.debug(f"Returned: {getx.text}")
+            self.logger.debug(f"Model_List: {model_list}")
+            return model_list
+        except:
+            self.logger.info("Error with getting Custom Models, check connection details to AI server is correct/saved/setup")
+            return [("default","Default")]
 
     def checkqueandDelete(self):
         self.logger.debug(u'Checking for left over Temp files..')
@@ -987,7 +1028,7 @@ hair dryer, toothbrush'''
         self.logger.debug(u'call_alertURL'+str(alerturl))
         try:
             confidence = "{:.0%}". format(confidence)  # round and add % - doesnt seem to bring icons though...  ## icons must be DB entry
-            vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train']
+            vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train', 'truck', 'vehicle']
             if deepStateObject in vehicles:
                 deepStateObject = "vehicle"
             if alerturl == "":
@@ -1286,7 +1327,13 @@ hair dryer, toothbrush'''
                 else:
                     ipaddress = self.ipaddress
 
-                urltosend = 'http://' + ipaddress + ":" + self.port + "/v1/vision/detection"
+                if self.usecustomModel and self.custommodelselected != "default":
+                    urltosend = 'http://' + ipaddress + ":" + self.port + f"/v1/vision/custom/{self.custommodelselected}"
+                    self.logger.debug(f"Using a Custom Model here:, with url {urltosend}")
+                else:
+                    urltosend = 'http://' + ipaddress + ":" + self.port + "/v1/vision/detection"
+                    self.logger.debug(f"Using Standard Model and Url {urltosend}")
+
                 if self.debug3:
                     self.logger.debug(u'Now Validing Image Data before sending..')
 
@@ -1880,7 +1927,13 @@ hair dryer, toothbrush'''
             else:
                 ipaddress = self.ipaddress
 
-            urltosend = 'http://' + ipaddress + ":" + self.port + "/v1/vision/detection"
+            if self.usecustomModel and self.custommodelselected != "default":
+                urltosend = 'http://' + ipaddress + ":" + self.port + f"/v1/vision/custom/{self.custommodelselected}"
+                self.logger.debug(f"Using a Custom Model, with url {urltosend}")
+            else:
+                urltosend = 'http://' + ipaddress + ":" + self.port + "/v1/vision/detection"
+                self.logger.debug(f"Using Standard Model and Url {urltosend}")
+
             if self.debug3:
                 self.logger.debug(u'Now Validing Image Data before sending..')
             if not self.imageVerify(path):
@@ -1984,6 +2037,40 @@ hair dryer, toothbrush'''
         self.pluginPrefs['deviceCamera']= self.deviceCamerastouse
         self.logger.debug(u'Cameras Enabled now now set to :'+str(self.deviceCamerastouse))
         return
+
+    def disableCustomModel(self,action):
+        self.logger.info("Disabling use of Custom Model.")
+        self.usecustomModel = False
+        self.custommodelselected = "default"
+        self.pluginPrefs['useCustomModel'] = False
+        self.pluginPrefs['customModelselected'] = self.custommodelselected
+        return
+
+    def setCustomModel(self, action):
+        self.logger.debug(u"setCustomModel Called as Action.")
+
+        customModel = action.props.get('customModel',"default")
+
+        if customModel == "default":
+            self.logger.info("Disabling use of Custom Model as default selected.")
+            self.usecustomModel = False
+            self.pluginPrefs['useCustomModel'] = False
+            self.pluginPrefs['customModelselected'] = customModel
+            self.custommodelselected = customModel
+            return
+
+        if self.usecustomModel == False:
+            self.logger.info(f"Setting use Custom Model to True as set Custom Model action group run")
+
+        self.usecustomModel == True
+        self.custommodelselected = customModel
+        self.pluginPrefs['customModelselected']= self.custommodelselected
+        self.pluginPrefs['useCustomModel'] = True
+        self.logger.info(f"Now using a Custom Model {customModel}")
+
+        return
+
+
 
     def setSupercharge(self, action):
         self.logger.debug(u"set SuperCharge Called as Action.")
@@ -2107,7 +2194,14 @@ hair dryer, toothbrush'''
             else:
                 ipaddress = self.ipaddress
 
-            urltosend = 'http://' + ipaddress + ":" + self.port + "/v1/vision/detection"
+            ## Check for using Custom Models
+            if self.usecustomModel and self.custommodelselected != "default":
+                urltosend = 'http://' + ipaddress + ":" + self.port + f"/v1/vision/custom/{self.custommodelselected}"
+                self.logger.debug(f"Using a Custom Model here:, with url {urltosend}")
+            else:
+                urltosend = 'http://' + ipaddress + ":" + self.port + "/v1/vision/detection"
+                self.logger.debug(f"Using Standard Model and Url {urltosend}")
+
             if self.debug3:
                 self.logger.debug(u'Now Validing Image Data before sending..')
 
@@ -2395,9 +2489,11 @@ hair dryer, toothbrush'''
  #   """Handle requests in a separate thread."""
 
 class httpHandler(BaseHTTPRequestHandler):
+
     def __init__(self,plugin, *args):
         try:
             self.plugin=plugin
+
             if self.plugin.debug4:
                 self.plugin.debugLog(u'New Http Handler thread:'+threading.currentThread().getName()+", total threads: "+str(threading.activeCount()))
             BaseHTTPRequestHandler.__init__(self, *args)
@@ -2405,11 +2501,25 @@ class httpHandler(BaseHTTPRequestHandler):
             self.plugin.logger.debug(u'httpHandler init caught Exception'+str(ex))
             pass
 
-    def date_sortfiles(self,path):
+    def date_sortfiles_old(self,path):
         try:
             self.plugin.logger.debug(u'Date_Sort Files called...')
             files = list(filter(os.path.isfile,glob.glob(path)))
             files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+            # return newish first
+            return files
+        except Exception as ex:
+            self.plugin.logger.debug(u'Error in Data_SortFiles'+str(ex))
+            return ''
+
+
+    def date_sortfiles(self,path):
+        try:
+            self.plugin.logger.debug(f'Date_Sort Files called... Path:{path}')
+            os.chdir(path)
+            files = sorted(filter(os.path.isfile, os.listdir('.')), key=os.path.getmtime)
+#            files = list(filter(os.path.isfile,glob.glob(path)))
+ #           files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
             # return newish first
             return files
         except Exception as ex:

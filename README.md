@@ -4,6 +4,8 @@ This is a _Simple_, well maybe not.. but powerful! plugin for DeepQuestAI or Dee
 
 DeepQuestAI is an interesting local Artificial Intelligence Object ML detection API AI engine.
 https://deepquestai.com/
+&
+CodeProject.AI
 
 It runs locally on your network - no internet, or cloud involvement needed, until some of BlueIris alternatives
 DeepQuest has also been used as a base for local AI addon for Blue Iris (see ipcamtalk forums)
@@ -42,6 +44,24 @@ Negatives:
 1. need CPU cycles to run the detection...
 Although RPI with NCS2 averages about 1-2 seconds per image on my testing 
 
+## Change log
+
+0.8.5
+
+This plugins supports both Deepstack and the seemingly more updated CodeProject.AI
+
+Both are interchangeable, although some advanced settings such as using custom models only are support with CodeProject.AI
+
+Over the years BlueIris has developed to incorporate a lot of these aspects, and now natively supports DeepStack and CodeProject.AI
+
+However this plugin still aids a number of additional features, including obviously Indigo integration, more images to be checked and a Web Server to display images hence it still has major usage at least in my household
+
+Changes:
+Add support for user selectable custom models.  These are universally applied to all AI calls.
+Selectable within Plugin Config
+Add action group to change Custom Model, and disable Custom Models - enables changing to ipcam_dark at Night and back again in daylight for example
+Add truck & vehicle to vehicle list to be marked as car/vehicle in BlueIris alerts
+Few colour changes in config pages
 
 ## **Potential Uses**
 

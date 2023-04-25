@@ -309,8 +309,8 @@
     <Action id="resetImageTimers" >
         <Name>Reset Image Timers</Name>
         <CallbackMethod>resetImageTimers</CallbackMethod>
-
     </Action>
+
    <Action id="setMainConfidence">
         <Name>Set Main Confidence Level</Name>
         <CallbackMethod>setMainConfidence</CallbackMethod>
@@ -330,6 +330,22 @@
                 <List class="indigo.devices" filter="com.GlennNZ.indigoplugin.BlueIris.BlueIrisCamera"/>
             </Field>
         </ConfigUI>
+    </Action>
+
+    <Action id="setCustomModel">
+        <Name>Set Custom Model</Name>
+        <CallbackMethod>setCustomModel</CallbackMethod>
+        <ConfigUI>
+            <Field id="customModel" type="menu" rows="6">
+                <Label>Select Custom Model:</Label>
+                <List class="self" method="myCustomModelGenerator"/>
+            </Field>
+        </ConfigUI>
+    </Action>
+
+    <Action id="disableCustomModel">
+        <Name>Disable use of Custom Model</Name>
+        <CallbackMethod>disableCustomModel</CallbackMethod>
     </Action>
 
     <Action id="setSupercharge">
