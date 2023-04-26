@@ -8,6 +8,11 @@
                 <TriggerLabel>IP Address Service</TriggerLabel>
                 <ControlPageLabel>IP Address</ControlPageLabel>
             </State>
+          <State id="model">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Custom Model in Use</TriggerLabel>
+                <ControlPageLabel>Custom Model in Use</ControlPageLabel>
+            </State>
             <State id="timeLastrun">
                 <ValueType>String</ValueType>
                 <TriggerLabel>Time last Run</TriggerLabel>

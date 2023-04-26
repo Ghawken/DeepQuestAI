@@ -378,6 +378,7 @@ hair dryer, toothbrush'''
                 {'key': 'ipaddress', 'value': self.ipaddress},
                 {'key': 'timeLastrun', 'value': self.mainTimeLastRun},
                 {'key': 'currentQue', 'value': self.quesize},
+                {'key': 'model', 'value': self.custommodelselected},
                 {'key': 'currentDelay', 'value': self.previoustimeDelay}
             ]
             device.updateStatesOnServer(stateList)
@@ -857,6 +858,7 @@ hair dryer, toothbrush'''
                     {'key': 'ipaddress', 'value': self.ipaddress},
                     {'key': 'timeLastrun', 'value': self.mainTimeLastRun},
                     {'key': 'currentQue', 'value': self.quesize},
+                     {'key': 'model', 'value': self.custommodelselected},
                     {'key': 'currentDelay', 'value': self.previoustimeDelay}
                 ]
             dev.updateStatesOnServer(stateList)
@@ -1365,7 +1367,7 @@ hair dryer, toothbrush'''
                     self.logger.debug(str(response))
                 #self.listCameras[cameraname] = False  # set to false as already run.
 
-                vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train']
+                vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train', 'truck']
                 anyobjectfound = False
                 if response['success'] == True:
                     self.mainProcessedImages = self.mainProcessedImages +1
@@ -1966,7 +1968,7 @@ hair dryer, toothbrush'''
                 self.logger.debug(str(response['predictions']))
                 objectFound = False
                 for object in response["predictions"]:
-                    label = object["label"]
+                    label = str(object["label"]).lower()
                     confidence = float(object['confidence'])
                      ## if mainconfidence less than completely skip this object
                     if confidence < float(self.confidenceMain):
@@ -2230,7 +2232,7 @@ hair dryer, toothbrush'''
                 self.logger.debug(str(response))
             # self.listCameras[cameraname] = False  # set to false as already run.
 
-            vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'truck']
+            vehicles = ['bicycle', 'car', 'motorcycle', 'bus', 'train', 'truck']
             anyobjectfound = False
             if response['success'] == True:
                 self.mainProcessedImages = self.mainProcessedImages + 1
