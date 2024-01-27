@@ -15,6 +15,9 @@ global MajorProblem
 MajorProblem = 0
 startingUp = False
 
+#from sanic import Sanic
+import uvloop
+import asyncio
 
 import datetime
 import time as t
@@ -396,7 +399,7 @@ hair dryer, toothbrush'''
                 objectName = dev.pluginProps['objectType']
                 if objectName =='other':
                     objectName = dev.pluginProps['objectOther']
-                self.logger.debug('Checking directory for ObjectType:' + str(objectName))
+
                 self.createFolder(objectName)
 
         if dev.deviceTypeId== "DeepStateService":
@@ -670,6 +673,7 @@ hair dryer, toothbrush'''
         ImageThread = threading.Thread(target=self.threadSendtodeepstate )
         ImageThread.setDaemon(True  )
         ImageThread.start()
+
 
         serverthread = threading.Thread(target=self.listenHTTP)
         serverthread.setDaemon(True)
@@ -1081,7 +1085,7 @@ hair dryer, toothbrush'''
                     dev.updateStateOnServer('timeLastFound', value=time)
                     dev.updateStateOnServer('confidence', value=confidence)
                     dev.updateStateOnServer('date', value=update_time)
-                    if str(indigodeviceid) in dev.pluginProps['deviceCamera']:  # check camera enabled, but update device states regardless
+                    if str(indigodeviceid) in dev.pluginProps['deviceCamera'] or cameraname=="NoCamera":  # check camera enabled, but update device states regardless
                         dev.updateStateOnServer('imageLink', value=filename)
                         self.logger.debug(u"Image "+str(filename)+ " saved as Camera Selected in device State.")
                         return True
@@ -2491,12 +2495,12 @@ hair dryer, toothbrush'''
 #class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
  #   """Handle requests in a separate thread."""
 
+### depreciating below
 class httpHandler(BaseHTTPRequestHandler):
 
     def __init__(self,plugin, *args):
         try:
             self.plugin=plugin
-
             if self.plugin.debug4:
                 self.plugin.debugLog(u'New Http Handler thread:'+threading.currentThread().getName()+", total threads: "+str(threading.activeCount()))
             BaseHTTPRequestHandler.__init__(self, *args)
@@ -2507,14 +2511,19 @@ class httpHandler(BaseHTTPRequestHandler):
     def date_sortfiles(self,path):
         try:
             self.plugin.logger.debug(u'Date_Sort Files called...')
-            files = list(filter(os.path.isfile,glob.glob(path)))
-            files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-            # return newish first
-            return files
+            if t.time()+30 > self.time:
+                files = list(filter(os.path.isfile,glob.glob(path)))
+                files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+                # return newish first
+                self.plugin.HTMLlistFiles = files
+                self.plugin.logger.debug("Updated file list.")
+                return files
+            else:
+                self.plugin.logger.debug("Returning old file list")
+                return self.plugin.HTMLlistFiles
         except Exception as ex:
             self.plugin.logger.debug(u'Error in Data_SortFiles'+str(ex))
             return ''
-
 
     def date_sortfiles_old(self,path):
         try:
@@ -2535,12 +2544,13 @@ class httpHandler(BaseHTTPRequestHandler):
     def do_GET(self):
 
         try:
-
+            self.time = t.time()
             if self.plugin.debug4:
                 self.plugin.logger.debug(u'Html Server: do_get: self.path = '+str(self.path) )
                 #self.plugin.logger.debug(u'Html Server: do_get:self.path[1:-5]:'+str(self.path[1:-5]) )
                 #self.plugin.logger.debug(u'Html Server: do_get:self.path[1:8]:' + str(self.path[1:8]))
                 #self.plugin.logger.debug(u'Html Server: do_get:self.path[9:-5]:' + str(self.path[9:-5]))
+            self.send_response(200)
 
             if self.path[1:8]=='archive' and self.plugin.archiveMounted:
                 if self.plugin.debug4:
@@ -2585,7 +2595,7 @@ class httpHandler(BaseHTTPRequestHandler):
                         file.close()
                     return
 
-            if self.path[1:-5] in self.plugin.alldeepstateclasses:
+            elif self.path[1:-5] in self.plugin.alldeepstateclasses:
             ## Okay so requested html path contains a DeepStateObject
             ## Could either be full or Crop - although not sure much role of cropped files...
             ## Just serve the Full File
@@ -2611,8 +2621,6 @@ class httpHandler(BaseHTTPRequestHandler):
                 mimetype = 'image/jpg'
                 self.send_header('Content-type', mimetype)
                 self.end_headers()
-
-
                 if self.plugin.HTMLimageNo >= len(self.plugin.HTMLlistFiles):
                     self.plugin.HTMLimageNo = 0
                 #self.plugin.logger.debug(u'listFiles:'+str(listFiles))
@@ -2628,8 +2636,17 @@ class httpHandler(BaseHTTPRequestHandler):
                     file = open(self.plugin.pathtoNotFound, 'rb')
                     self.wfile.write(file.read())
                     file.close()
+                return
+            else:
+                self.send_response(200)
+                mimetype = 'image/jpg'
+                self.send_header('Content-type', mimetype)
+                self.end_headers()
+                file = open(self.plugin.pathtoNotFound, 'rb')
+                self.wfile.write(file.read())
+                file.close()
 
-            return
+                return
 
         except self.plugin.StopThread:
             self.logger.debug(u'Self.Stop Thread called')
